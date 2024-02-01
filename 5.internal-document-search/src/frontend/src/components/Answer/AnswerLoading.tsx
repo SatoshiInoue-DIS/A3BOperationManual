@@ -16,7 +16,7 @@ export const AnswerLoading = () => {
                 <AnswerIcon />
                 <Stack.Item grow>
                     <p className={styles.answerText}>
-                        考えてまーす
+                        一生懸命考え中
                         <span className={styles.loadingdots} />
                     </p>
                 </Stack.Item>

@@ -151,8 +151,8 @@ const DocSearch = () => {
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
                             <SparkleFilled fontSize={"120px"} primaryFill={"rgba(115, 118, 225, 1)"} aria-hidden="true" aria-label="Chat logo" />
-                            <h1 className={styles.chatEmptyStateTitle}>Search within Java training document</h1>
-                            <h2 className={styles.chatEmptyStateSubtitle}>Ask me anything</h2>
+                            <h1 className={styles.chatEmptyStateTitle}>研修テキスト内を検索します。</h1>
+                            <h2 className={styles.chatEmptyStateSubtitle}>なんでも聞いてください。</h2>
                             {/* <ExampleList onExampleClicked={onExampleClicked} /> */}
                         </div>
                     ) : (
@@ -197,7 +197,7 @@ const DocSearch = () => {
                     <div className={styles.chatInput}>
                         <QuestionInput
                             clearOnSend
-                            placeholder="ChatGPTがJavaテキスト内検索をお手伝いします。何について知りたいですか？"
+                            placeholder="ChatGPTがテキスト内検索をお手伝いします。何について知りたいですか？"
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                         />
@@ -216,19 +216,19 @@ const DocSearch = () => {
                 )}
 
                 <Panel
-                    headerText="Configure answer generation"
+                    headerText="回答生成のための詳細設定"
                     isOpen={isConfigPanelOpen}
                     isBlocking={false}
                     onDismiss={() => setIsConfigPanelOpen(false)}
                     closeButtonAriaLabel="Close"
-                    onRenderFooterContent={() => <DefaultButton onClick={() => setIsConfigPanelOpen(false)}>Close</DefaultButton>}
+                    onRenderFooterContent={() => <DefaultButton onClick={() => setIsConfigPanelOpen(false)}>閉じる</DefaultButton>}
                     isFooterAtBottom={true}
                 >
                     <Dropdown
                         className={styles.chatSettingsSeparator}
                         defaultSelectedKeys={[gptModel]}
                         selectedKey={gptModel}
-                        label="GPT Model:"
+                        label="GPTモデル:"
                         options={gpt_models}
                         onChange={onGptModelChange}
                     />
@@ -236,29 +236,29 @@ const DocSearch = () => {
                         className={styles.chatSettingsSeparator}
                         defaultSelectedKeys={[temperature]}
                         selectedKey={temperature}
-                        label="Temperature1:"
+                        label="テンプラチャー:"
                         options={temperatures}
                         onChange={onTempertureChange}
                     />
                     <SpinButton
                         className={styles.chatSettingsSeparator}
-                        label="Retrieve this many documents from search:"
+                        label="検索結果から取得するドキュメントの数:"
                         min={1}
                         max={50}
                         defaultValue={retrieveCount.toString()}
                         onChange={onRetrieveCountChange}
                     />
-                    <TextField className={styles.chatSettingsSeparator} label="Exclude category" onChange={onExcludeCategoryChanged} />
+                    <TextField className={styles.chatSettingsSeparator} label="除外するカテゴリ" onChange={onExcludeCategoryChanged} />
                     <Checkbox
                         className={styles.chatSettingsSeparator}
                         checked={useSemanticRanker}
-                        label="Use semantic ranker for retrieval"
+                        label="セマンティックランカーを使用する"
                         onChange={onUseSemanticRankerChange}
                     />
                     <Checkbox
                         className={styles.chatSettingsSeparator}
                         checked={useSemanticCaptions}
-                        label="Use query-contextual summaries instead of whole documents"
+                        label="ドキュメント全体ではなく、クエリのコンテキストに応じた要約を使用する"
                         onChange={onUseSemanticCaptionsChange}
                         disabled={!useSemanticRanker}
                     />

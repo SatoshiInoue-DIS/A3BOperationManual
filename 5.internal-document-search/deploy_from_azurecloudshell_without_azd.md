@@ -96,7 +96,7 @@ $roleId = az cosmosdb sql role definition create --account-name $env:AZURE_COSMO
 az cosmosdb sql role assignment create --account-name $env:AZURE_COSMOSDB_ACCOUNT --resource-group $env:AZURE_COSMOSDB_RESOURCE_GROUP --scope / --principal-id $env:BACKEND_IDENTITY_PRINCIPAL_ID --role-definition-id $roleId
 ```
 
-ここまでの手順で、「企業向けChat」の機能が使えるようになりますが、社内文書データの投入ができていないので、「社内文書検索」機能を使おうとすると`Error: () The index 'gptkbindex' for service 'xxx' was not found`というエラーになります。
+ここまでの手順で、「企業向けChat」の機能が使えるようになりますが、社内文書データの投入ができていないので、「社内文書検索」機能を使おうとすると`Error: () The index 'javatextindex' for service 'xxx' was not found`というエラーになります。
 
 ## データの投入（data配下のPDFを利用して Search Index を作成）
 `data/`にあるPDFファイルをAzure Blob Storageにアプロードし、そのデータを使ってAzure Searchのインデックスを作成します。
@@ -105,7 +105,7 @@ az cosmosdb sql role assignment create --account-name $env:AZURE_COSMOSDB_ACCOUN
 $env:AZURE_STORAGE_ACCOUNT = "xxx" # Azureリソースの作成時に作成されているリソースの名前
 $env:AZURE_STORAGE_CONTAINER = "content" # 固定値
 $env:AZURE_SEARCH_SERVICE = "xxx" # Azureリソースの作成時に作成されているリソースの名前
-$env:AZURE_SEARCH_INDEX = "gptkbindex" # 固定値
+$env:AZURE_SEARCH_INDEX = "javatextindex" # 固定値
 $env:AZURE_SEARCH_KEY = "xxx" # Azure PortalからAzure Search ServiceのKeyを取得
 $env:AZURE_FORMRECOGNIZER_SERVICE = "xxx" # Azureリソースの作成時に作成されているリソースの名前
 $env:AZURE_FORMRECOGNIZER_KEY = "xxx" # Azure PortalからAzure Form RecognizerのKeyを取得

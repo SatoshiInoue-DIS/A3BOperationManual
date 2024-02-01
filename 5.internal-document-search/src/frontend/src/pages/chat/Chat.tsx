@@ -132,26 +132,26 @@ const Chat = () => {
                     </div>
                 </div>
                 <Panel
-                    headerText="Configure GPT settings"
+                    headerText="設定"
                     isOpen={isConfigPanelOpen}
                     isBlocking={false}
                     onDismiss={() => setIsConfigPanelOpen(false)}
                     closeButtonAriaLabel="Close"
-                    onRenderFooterContent={() => <DefaultButton onClick={() => setIsConfigPanelOpen(false)}>Close</DefaultButton>}
+                    onRenderFooterContent={() => <DefaultButton onClick={() => setIsConfigPanelOpen(false)}>閉じる</DefaultButton>}
                     isFooterAtBottom={true}
                 >
                     <Dropdown
                         className={styles.chatSettingsSeparator}
                         defaultSelectedKeys={[gptModel]}
                         selectedKey={gptModel}
-                        label="GPT Model:"
+                        label="GPTモデル:"
                         options={gpt_models}
                         onChange={onGptModelChange}
                     />
                     <TextField
                         className={styles.chatSettingsSeparator}
                         value={systemPrompt}
-                        label="System Prompt:"
+                        label="システムプロンプト:"
                         multiline
                         autoAdjustHeight
                         onChange={onSystemPromptChange}
@@ -160,7 +160,7 @@ const Chat = () => {
                         className={styles.chatSettingsSeparator}
                         defaultSelectedKeys={[temperature]}
                         selectedKey={temperature}
-                        label="Temperature:"
+                        label="テンプラチャー:"
                         options={temperatures}
                         onChange={onTempertureChange}
                     />

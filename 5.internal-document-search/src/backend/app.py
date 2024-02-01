@@ -25,9 +25,9 @@ AZURE_STORAGE_CONTAINER = os.environ.get("AZURE_STORAGE_CONTAINER")
 AZURE_SEARCH_SERVICE = os.environ.get("AZURE_SEARCH_SERVICE")
 AZURE_SEARCH_INDEX = os.environ.get("AZURE_SEARCH_INDEX")
 
-KB_FIELDS_CONTENT = os.environ.get("KB_FIELDS_CONTENT") or "content"
-KB_FIELDS_CATEGORY = os.environ.get("KB_FIELDS_CATEGORY") or "category"
-KB_FIELDS_SOURCEPAGE = os.environ.get("KB_FIELDS_SOURCEPAGE") or "sourcepage"
+KB_FIELDS_CONTENT = os.environ.get("KB_FIELDS_CONTENT") or "vector"
+KB_FIELDS_CATEGORY = os.environ.get("KB_FIELDS_CATEGORY") or "chunk"
+KB_FIELDS_SOURCEPAGE = os.environ.get("KB_FIELDS_SOURCEPAGE") or "title"
 
 AZURE_OPENAI_SERVICE = os.environ.get("AZURE_OPENAI_SERVICE")
 AZURE_OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION")
@@ -184,6 +184,6 @@ def ensure_openai_token():
         openai_token = azure_credential.get_token("https://cognitiveservices.azure.com/.default")
         openai.api_key = openai_token.token
     # openai.api_key = os.environ.get("AZURE_OPENAI_KEY")
-   
+
 if __name__ == "__main__":
     app.run(port=5000, host='0.0.0.0')

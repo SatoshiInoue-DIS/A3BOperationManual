@@ -1,6 +1,7 @@
 from text import nonewlines
 
 import openai
+from approaches.getcontent import generate_embeddings
 from azure.search.documents import SearchClient
 from azure.search.documents.models import QueryType
 from approaches.approach import Approach
@@ -55,6 +56,7 @@ source quesion: {user_question}
         chat_deployment = chat_gpt_model.get("deployment")
 
         # STEP 1: Generate an optimized keyword search query based on the chat history and the last question
+        # ステップ 1: チャット履歴と最後の質問に基づいて、最適化されたキーワード検索クエリを生成します
         user_q = 'Generate search query for: ' + history[-1]["user"]
         query_prompt = self.query_prompt_template.format(user_question=history[-1]["user"])
         message_builder = MessageBuilder(query_prompt)
@@ -67,24 +69,31 @@ source quesion: {user_question}
         max_tokens =  get_max_token_from_messages(messages, chat_model)
 
         # Change create type ChatCompletion.create → ChatCompletion.acreate when enabling asynchronous support.
+        # クエリ生成
         chat_completion = openai.ChatCompletion.create(
             engine=chat_deployment, 
             messages=messages,
             temperature=0.0,
             max_tokens=max_tokens,
             n=1)
-
+        # クエリ取り出し
         query_text = chat_completion.choices[0].message.content
         if query_text.strip() == "0":
             query_text = history[-1]["user"] # Use the last user input if we failed to generate a better query
 
         total_tokens = chat_completion.usage.total_tokens
 
+        # 質問文のベクトルを算出
+        query_vector = generate_embeddings(history[-1]["user"]) # ベクトルクエリ
+
         # STEP 2: Retrieve relevant documents from the search index with the GPT optimized query
+        # ステップ 2: GPT 最適化クエリを使用して検索インデックスから関連ドキュメントを取得する
         use_semantic_captions = True if overrides.get("semanticCaptions") else False
         top = overrides.get("top")
         exclude_category = overrides.get("excludeCategory") or None
-        filter = "category ne '{}'".format(exclude_category.replace("'", "''")) if exclude_category else None
+        #インデックスで設定したtitleフィールドの中で除外するものを選ぶ（本来ならドキュメントをカテゴリごとに仕分けしてそれを指定するようにする）
+        #neは演算子<>の意味でオペランドが等しくない場合に真、またeqは＝でオペランドが等しい場合に真という意味かも知れない
+        filter = "title ne '{}'".format(exclude_category.replace("'", "''")) if exclude_category else None
         semantic_ranker = overrides.get("semanticRanker")
 
         if semantic_ranker:
@@ -93,16 +102,23 @@ source quesion: {user_question}
                                           query_type=QueryType.SEMANTIC,
                                           query_language="en-us",
                                           query_speller="lexicon",
-                                          semantic_configuration_name="default",
+                                          semantic_configuration_name="javatextindex-semantic-configuration",
+                                          query_answer='extractive',
                                           top=top,
-                                          query_caption="extractive|highlight-false" if use_semantic_captions else None
+                                          query_caption="extractive|highlight-false" if use_semantic_captions else None,
+                                          vector=query_vector,
+                                          top_k=5,      #上から5つのデータ
+                                          vector_fields="vector"
                                           )
         else:
             r = self.search_client.search(query_text,
                                           filter=filter,
                                           top=top
                                           )
+            
+        # 検索結果をtopの件数取得してresultsに入れる
         if use_semantic_captions:
+            #@search.captions.textにクエリのコンテキストに応じた要約が入っている
             results = [doc[self.sourcepage_field] + ": " + nonewlines(" . ".join([c.text for c in doc['@search.captions']])) for doc in r]
         else:
             results = [doc[self.sourcepage_field] + ": " + nonewlines(doc[self.content_field]) for doc in r]
@@ -130,6 +146,7 @@ source quesion: {user_question}
         max_tokens = get_max_token_from_messages(messages, completion_model)
 
         # Change create type ChatCompletion.create → ChatCompletion.acreate when enabling asynchronous support.
+        # 回答生成
         response = openai.ChatCompletion.create(
             engine=completion_deployment, 
             messages=messages,

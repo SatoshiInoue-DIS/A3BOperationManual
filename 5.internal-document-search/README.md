@@ -146,8 +146,8 @@ GPT-4 モデルのデプロイ後、以下の操作を実行してください�
 1. このサンプルをデプロイした際に、プロジェクトのディレクトリに `./${環境名}/.env` ファイルが作成されています。このファイルを任意のエディタで開きます。
 1. 以下の行を探して、デプロイした GPT-4 モデルのデプロイ名を指定してください。
 ```
-AZURE_OPENAI_GPT_4_DEPLOYMENT="" # GPT-4モデルのデプロイ名
-AZURE_OPENAI_GPT_4_32K_DEPLOYMENT="" # GPT-4-32Kモデルのデプロイ名
+AZURE_OPENAI_GPT_4_DEPLOYMENT="gpt-4-deploy" # GPT-4モデルのデプロイ名
+AZURE_OPENAI_GPT_4_32K_DEPLOYMENT="gpt-4-32k-deploy" # GPT-4-32Kモデルのデプロイ名
 ```
 1. `azd up` を実行します。
 
