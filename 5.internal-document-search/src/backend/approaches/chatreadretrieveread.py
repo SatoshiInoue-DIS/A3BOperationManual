@@ -164,3 +164,4 @@ source quesion: {user_question}
         msg_to_display = '\n\n'.join([str(message) for message in messages])
 
         return {"data_points": results, "answer": response_text, "thoughts": f"Searched for:<br>{query_text}<br><br>Conversations:<br>" + msg_to_display.replace('\n', '<br>')}
+
