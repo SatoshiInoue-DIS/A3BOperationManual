@@ -14,6 +14,7 @@ class MessageBuilder:
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
+    BOT = "bot"
 
     def __init__(self, system_content: str):
         self.messages = [{'role': 'system', 'content': system_content}]
@@ -33,6 +34,25 @@ class MessageBuilder:
 
         for h in reversed(history[:-1]):
             if bot_msg := h.get(self.ASSISTANT):
+                self.append_message(self.ASSISTANT, bot_msg, index=append_index)
+            if user_msg := h.get(self.USER):
+                self.append_message(self.USER, user_msg, index=append_index)
+
+        messages = self.messages
+        return messages
+
+    def get_messages_from_history_for_answer(self, history: list[dict[str, str]], user_conv: str, few_shots = []) -> list:
+        # Add examples to show the chat what responses we want. It will try to mimic any responses and make sure they match the rules laid out in the system message.
+        for shot in few_shots:
+            self.append_message(shot.get('role'), shot.get('content'))
+
+        user_content = user_conv
+        append_index = len(few_shots) + 1
+
+        self.append_message(self.USER, user_content, index=append_index)
+
+        for h in reversed(history[:-1]):
+            if bot_msg := h.get(self.BOT):
                 self.append_message(self.ASSISTANT, bot_msg, index=append_index)
             if user_msg := h.get(self.USER):
                 self.append_message(self.USER, user_msg, index=append_index)

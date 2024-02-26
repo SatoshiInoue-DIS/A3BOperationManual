@@ -26,6 +26,8 @@ class ChatReadRetrieveReadApproach(Approach):
     system_message_chat_conversation = """Assistant helps the customer questions. Be brief in your answers.
 Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
 For tabular information return it as an html table. Do not return markdown format. If the question is not in English, answer in the language used in the question.
+If a word with multiple meanings is used, ask which meaning the word should be, if necessary.
+If you have other suggestions or options that are not included in the information sources below, please use the phrase "in the following information sources."
 Each source has a name followed by colon and the actual information, always include the source name for each fact you use in the response. Use square brackets to reference the source, e.g. [info1.txt]. Don't combine sources, list each source separately, e.g. [info1.txt][info2.pdf].
 """
     query_prompt_template = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by searching in a knowledge base.
@@ -137,7 +139,7 @@ source quesion: {user_question}
         completion_deployment = completion_gpt_model.get("deployment")
 
         message_builder = MessageBuilder(self.system_message_chat_conversation)
-        messages = message_builder.get_messages_from_history(
+        messages = message_builder.get_messages_from_history_for_answer(
             history,
             history[-1]["user"]+ "\n\nSources:\n" + content[:1024], # Model does not handle lengthy system messages well. Moving sources to latest user conversation to solve follow up questions prompt.
             )
@@ -153,14 +155,16 @@ source quesion: {user_question}
             temperature=temaperature, 
             max_tokens=1024,
             n=1)
-
+            
         response_text = response.choices[0]["message"]["content"]
         total_tokens += response.usage.total_tokens
 
         # logging
+        # Azure Cosmos DBのコンテナーにプロンプトを登録
         input_text = history[-1]["user"]
         write_chatlog(ApproachType.DocSearch, user_name, total_tokens, input_text, response_text, query_text)
-
+        
+        # 思考プロセス
         msg_to_display = '\n\n'.join([str(message) for message in messages])
 
         return {"data_points": results, "answer": response_text, "thoughts": f"Searched for:<br>{query_text}<br><br>Conversations:<br>" + msg_to_display.replace('\n', '<br>')}

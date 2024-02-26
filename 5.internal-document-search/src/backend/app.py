@@ -128,8 +128,10 @@ def content_file(path):
             ext = ext[1:].lower()
             extensions = ["doc", "docs", "xls", "xlsx", "ppt", "pptx"]
             if ext in extensions:
+                # ダウンロードすべき
                 mode = "attachment"
             else:
+                # ページの一部として表示可能
                 mode = "inline"
             
             return blob.readall(), 200, {"Content-Type": mime_type, "Content-Disposition": f"{mode}; filename={urllib.parse.quote(path)}"}
