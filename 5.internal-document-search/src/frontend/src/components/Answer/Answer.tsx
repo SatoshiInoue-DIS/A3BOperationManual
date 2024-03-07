@@ -8,6 +8,9 @@ import { AskResponse, getCitationFilePath } from "../../api";
 import { parseAnswerToHtml } from "./AnswerParser";
 import { AnswerIcon } from "./AnswerIcon";
 
+import ReactMarkdown from 'react-markdown'
+import CodeBlock from "../CodeBlock";
+
 interface Props {
     answer: AskResponse;
     isSelected?: boolean;
@@ -58,7 +61,9 @@ export const Answer = ({
             </Stack.Item>
 
             <Stack.Item grow>
-                <div className={styles.answerText} dangerouslySetInnerHTML={{ __html: sanitizedAnswerHtml }}></div>
+                <div className={styles.answerText}>
+                    <ReactMarkdown children={parsedAnswer.answerHtml} components={{code: CodeBlock,}} />
+                </div>
             </Stack.Item>
 
             {!!parsedAnswer.citations.length && (

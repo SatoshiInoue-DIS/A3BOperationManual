@@ -12,10 +12,14 @@
     "@fluentui/react": "^8.105.3",
     "@fluentui/react-icons": "^2.0.195",
     "@react-spring/web": "^9.7.1",
+    "@types/react-syntax-highlighter": "^15.5.11",
     "dompurify": "^3.0.1",
+    "json-loader": "^0.5.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.8.1"
+    "react-markdown": "^8.0.5",
+    "react-router-dom": "^6.8.1",
+    "react-syntax-highlighter": "^15.5.0"
   },
   "devDependencies": {
     "@types/dompurify": "^2.4.0",
