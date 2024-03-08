@@ -80,7 +80,6 @@
     bottom: 0;
     flex: 0 0 100px;
     padding-top: 12px;
-    padding-bottom: 24px;
     padding-left: 24px;
     padding-right: 24px;
     width: 100%;
@@ -112,4 +111,19 @@
 .commandButton {
     margin-right: 20px;
     margin-bottom: 20px;
+}
+
+.companylogo {
+    width: 80px;
+}
+
+.notesAnswerContainer {
+    text-align: center;
+    margin: 0;
+}
+.notesAnswer {
+    color: #676767;
+    margin: 6px;
+    font-size: .75rem;
+    line-height: 1rem;
 }

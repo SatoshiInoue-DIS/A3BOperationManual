@@ -129,6 +129,9 @@ const Chat = () => {
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                         />
+                        <div className={styles.notesAnswerContainer}>
+                            <p className={styles.notesAnswer}>回答は必ずしも正解ではないことに気を付けましょう。</p>
+                        </div>
                     </div>
                 </div>
                 <Panel

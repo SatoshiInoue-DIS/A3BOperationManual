@@ -1,0 +1,37 @@
+.howtousesContainer {
+    max-width: 770px;
+}
+
+.howtousesNavList {
+    list-style: none;
+    padding-left: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    flex: 1;
+    justify-content: center;
+}
+
+.howtouse {
+    word-break: break-word;
+    background: #dbdbdb;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    margin-bottom: 5px;
+}
+
+.howtouseText {
+    margin: 0;
+    font-size: 16px;
+    width: 340px;
+    height: 60px;
+}
+
+@media only screen and (max-height: 780px) {
+    .howtouseText {
+        font-size: 14px;
+        height: 60px;
+    }
+}

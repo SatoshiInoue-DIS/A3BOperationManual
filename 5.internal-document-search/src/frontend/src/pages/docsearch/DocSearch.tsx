@@ -1,14 +1,13 @@
 import { useRef, useState, useEffect } from "react";
 import { Checkbox, Panel, DefaultButton, TextField, SpinButton } from "@fluentui/react";
 import { Dropdown, IDropdownOption } from "@fluentui/react/lib/Dropdown";
-import { SparkleFilled } from "@fluentui/react-icons";
 
 import styles from "./DocSearch.module.css";
 
 import { searchdocApi, Approaches, AskResponse, ChatRequest, ChatTurn } from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
-// import { ExampleList } from "../../components/Example";
+import { HowToUseList } from "../../components/HowToUse";
 import { UserChatMessage } from "../../components/UserChatMessage";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 import { SettingsButton } from "../../components/SettingsButton";
@@ -150,10 +149,9 @@ const DocSearch = () => {
                 <div className={styles.chatContainer}>
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
-                            <SparkleFilled fontSize={"120px"} primaryFill={"rgba(115, 118, 225, 1)"} aria-hidden="true" aria-label="Chat logo" />
-                            <h1 className={styles.chatEmptyStateTitle}>研修テキスト内を検索します。</h1>
-                            <h2 className={styles.chatEmptyStateSubtitle}>なんでも聞いてください。</h2>
-                            {/* <ExampleList onExampleClicked={onExampleClicked} /> */}
+                            <img className={styles.companylogo} src="./companylogo.png" alt="company-logo" />
+                            <h1 className={styles.chatEmptyStateTitle}>研修テキスト内検索</h1>
+                            <HowToUseList/>
                         </div>
                     ) : (
                         <div className={styles.chatMessageStream}>
@@ -201,6 +199,9 @@ const DocSearch = () => {
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                         />
+                        <div className={styles.notesAnswerContainer}>
+                            <p className={styles.notesAnswer}>回答は必ずしも正解ではないことに気を付けましょう。</p>
+                        </div>
                     </div>
                 </div>
 
