@@ -50,12 +50,19 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend }: Pr
             <TextField
                 className={styles.questionInputTextArea}
                 placeholder={placeholder}
-                multiline
+                multiline={true}
                 resizable={false}
-                borderless
+                borderless={true}
                 value={question}
                 onChange={onQuestionChange}
                 onKeyDown={onEnterPress}
+                autoAdjustHeight={true}
+                styles={{
+                    field: { // stylesオブジェクト内でfieldを指定して、最大高さを設定する
+                        maxHeight: 200, // 最大高さを設定
+                        overflowY: "auto"
+                    }
+                }}
             />
             <div className={styles.questionInputButtonsContainer}>
                 <div
