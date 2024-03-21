@@ -8,8 +8,9 @@ import { AskResponse, getCitationFilePath } from "../../api";
 import { parseAnswerToHtml } from "./AnswerParser";
 import { AnswerIcon } from "./AnswerIcon";
 
-import ReactMarkdown from 'react-markdown'
-import CodeBlock from "../CodeBlock";
+// import ReactMarkdown from 'react-markdown'
+// import remarkGfm from 'remark-gfm'
+// import CodeBlock from "../CodeBlock";
 
 interface Props {
     answer: AskResponse;
@@ -62,7 +63,7 @@ export const Answer = ({
 
             <Stack.Item grow>
                 <div className={styles.answerText}>
-                    <ReactMarkdown children={parsedAnswer.answerHtml} components={{code: CodeBlock,}} />
+                    <div className={styles.answerText} dangerouslySetInnerHTML={{ __html: sanitizedAnswerHtml }}></div>
                 </div>
             </Stack.Item>
 
