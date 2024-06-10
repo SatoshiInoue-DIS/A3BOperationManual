@@ -28,6 +28,7 @@ AZURE_SEARCH_INDEX = os.environ.get("AZURE_SEARCH_INDEX")
 KB_FIELDS_CONTENT = os.environ.get("KB_FIELDS_CONTENT") or "vector"
 KB_FIELDS_CATEGORY = os.environ.get("KB_FIELDS_CATEGORY") or "chunk"
 KB_FIELDS_SOURCEPAGE = os.environ.get("KB_FIELDS_SOURCEPAGE") or "title"
+SEMANTIC_CONFIGURATION_NAME = os.environ.get("SEMANTIC_CONFIGURATION_NAME")
 
 AZURE_OPENAI_SERVICE = os.environ.get("AZURE_OPENAI_SERVICE")
 AZURE_OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION")
@@ -91,7 +92,8 @@ chat_approaches = {
     "rrr": ChatReadRetrieveReadApproach(
         search_client, 
         KB_FIELDS_SOURCEPAGE, 
-        KB_FIELDS_CONTENT
+        KB_FIELDS_CONTENT,
+        SEMANTIC_CONFIGURATION_NAME
     ),
     "r": ChatReadApproach()
 }

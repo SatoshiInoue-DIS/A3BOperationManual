@@ -47,10 +47,11 @@ source quesion: {user_question}
         {'role' : ASSISTANT, 'content' : 'Health plan cardio coverage' }
     ]
 
-    def __init__(self, search_client: SearchClient, sourcepage_field: str, content_field: str):
+    def __init__(self, search_client: SearchClient, sourcepage_field: str, content_field: str, semantic_conf_name: str):
         self.search_client = search_client
         self.sourcepage_field = sourcepage_field
         self.content_field = content_field
+        self.semantic_conf_name = semantic_conf_name
     
     def run(self, user_name: str, history: list[dict], overrides: dict) -> any:
         chat_model = overrides.get("gptModel")
@@ -104,13 +105,13 @@ source quesion: {user_question}
                                           query_type=QueryType.SEMANTIC,
                                           query_language="en-us",
                                           query_speller="lexicon",
-                                          semantic_configuration_name="default",
+                                          semantic_configuration_name=self.semantic_conf_name,
                                           query_answer='extractive',
                                           top=top,
                                           query_caption="extractive|highlight-false" if use_semantic_captions else None,
                                           vector=query_vector,
                                           top_k=5,      #上から5つのデータ
-                                          vector_fields="contentVector"
+                                          vector_fields=self.content_field
                                           )
         else:
             r = self.search_client.search(query_text,
