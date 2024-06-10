@@ -1,58 +1,180 @@
-[![static-analysis](https://github.com/Azure-Samples/jp-azureopenai-samples/workflows/static-analysis/badge.svg)](https://github.com/Azure-Samples/jp-azureopenai-samples/actions/workflows/static-analysis.yml)
+# Chat+社内文書検索
 
-# Azure OpenAI Samples Japan
-Azure OpenAIを活用したアプリケーション実装のリファレンスを目的として、アプリのサンプル（リファレンスアーキテクチャ、サンプルコードとデプロイ手順）を無償提供しています。 本サンプルは、日本マイクロソフトの社員有志により作成・公開しています（This repository contains sample applications that leverage Azure OpenAI with a focus on use cases for the Japan market）
+## 概要
+このデモは、ChatGPT ライクなインターフェースを使用して企業の社内文書を検索するアプリケーションの実装パターンです。デモアプリを利用するためには、Azure Open AI の ChatGPT(gpt-35-turbo) モデルと、Azure Cognitive Search、他にいくつかのリソースの作成が必要です。
 
-## 公開サンプル一覧 (Samples included)
-| タイトル      | README      |
-| ------------- | ------------- |
-| 1. コールセンター向け AI アシスタント  | [Link](https://github.com/Azure-Samples/jp-azureopenai-samples/tree/main/1.call-center/README.md)  |
-| 2. 料理メニューの提案  | [Link](https://github.com/Azure-Samples/jp-azureopenai-samples/tree/main/2.recipe-adviser/README.md)  |
-| 3. 目標達成アシスタント  | [Link](https://github.com/Azure-Samples/jp-azureopenai-samples/tree/main/3.goal-achievement-adviser/README.md)  |
-| 4. 企業分析  | [Link](https://github.com/Azure-Samples/jp-azureopenai-samples/tree/main/4.company-research/README.md)  |
-| 5. 企業内向けChatと社内文書検索  | [Link](https://github.com/Azure-Samples/jp-azureopenai-samples/tree/main/5.internal-document-search/README.md)  |
-| 6. 共通ガイド  | [Link](https://github.com/Azure-Samples/jp-azureopenai-samples/tree/main/6.azureopenai-landing-zone-accelerator/README.md)  |
+このリポジトリでは、サンプルデータに[厚生労働省のモデル就業規則](https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zigyonushi/model/index.html)を使用しています。
 
-## Getting Started
-### 前提知識
-- **Azureの基礎**: Azure Portalの使い方、Azure CLIの使い方、Azureリソースの概念、RBAC等のAzureの基礎が前提知識になります。自信がない場合は、[Microsoft Azure Virtual Training Day: Azureの基礎](https://www.microsoft.com/ja-jp/events/top/training-days/azure?activetab=pivot:azure%E3%81%AE%E5%9F%BA%E7%A4%8Etab)等の活用を推奨します。
-- **Azure OpenAI Serviceの基礎**: Azure OpenAI Serviceとは何かを理解している必要があります。[Azure OpenAI Developers セミナー](https://www.youtube.com/watch?v=ek3YWrHD76g)をご覧いただければ、最低限の基礎は身に付きます。
-- **PowerShellやBash等のコマンドラインツールの使い方の基礎**: 自信がない場合は、[Introduction to PowerShell](https://learn.microsoft.com/training/modules/introduction-to-powershell/)や[Introduction to Bash](https://learn.microsoft.com/training/modules/bash-introduction/)をご活用ください
-- **VS Code等のコードエディタの使い方の基礎**: 自信がない場合は、[Introduction to Visual Studio Code](https://learn.microsoft.com/training/modules/introduction-to-visual-studio-code/)をご活用ください
- 
-### サンプルアプリケーションのデプロイ
-日本語: 各サンプルのREADMEをご参照ください。
-English: Please refer to the README for each of the samples.
+デモアプリは以下のように動作します。
 
-### 本番稼働を視野にいれる場合
-本番稼働（や本番に近い検証環境等）を視野にいれる場合、様々な考慮事項があります。考えられる考慮事項は[Cloud Adoption Framework](https://learn.microsoft.com/azure/cloud-adoption-framework/overview)や[Well-Architected Framework](https://learn.microsoft.com/azure/well-architected/)にまとめられていますが、考慮事項は多岐にわたるので、状況（例: シナリオ、企業の事情）に応じて重要度や緊急度等をもとにした優先順位付けが必要になります。例えば、社内文書検索シナリオではプライベートネットワークを考慮した設計が重要になることが多くなると推測される一方、料理メニューの提案シナリオにおいてはエンドユーザのニーズに合わせて柔軟にアプリケーションに機能追加をしていくことが重要になることが推測されます。
+## Architecture
+![RAG Architecture](assets/appcomponents.png)
 
-### バージョン切り替え
+## UI
+![Chat screen](assets/chatscreen.png)
 
-本サンプルでは、過去のバージョンを使用しているユーザがいることを想定し、タグでアプリケーションのバージョンを管理しています。
-各バージョンにおける詳しい内容については、[リリースノート](https://github.com/Azure-Samples/jp-azureopenai-samples/releases) をご確認ください。
-以下の手順で、特定のcommit時のバージョンを切り替えることができます。
+## セットアップガイド
 
-```sh
-git checkout -b <ブランチ名> refs/tags/<タグ名>
+> **重要:** このサンプルをデプロイするには、**Azure Open AI サービスが有効になっているサブスクリプションが必要です**。Azure Open AI サービスへのアクセス申請は[こちら](https://aka.ms/oaiapply)から行ってください。
+
+### 事前準備
+
+#### クラウド実行環境
+このデモをデプロイすると以下のリソースが Azure サブスクリプション上に作成されます。
+| サービス名 | SKU | Note |
+| --- | --- | --- |
+|Azure App Service|S1||
+|Azure OpenAI Service|S0|gpt-3.5-turbo gpt-3.5-turbo-16k|
+|Azure Cognitive Search|S1||
+|Azure Cosmos DB|プロビジョニング済みスループット||
+|Azure Form Recognizer|S0||
+|Azure Blob Storage|汎用v2|ZRS|
+|Azure Application Insights||ワークスペース　ベース|
+|Azure Log Analytics|||
+
+#### ローカル開発環境
+このデモをデプロイするためには、ローカルに以下の開発環境が必要です。
+> **重要** このサンプルは Windows もしくは Linux 環境で動作します。ただし、WSL2 の環境では正常に動作しません。
+- [Azure Developer CLI](https://aka.ms/azure-dev/install) （version 1.0.2以降推奨）
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) （version 2.50.0以降推奨）
+- [Python 3+](https://www.python.org/downloads/)（version 3.11以降推奨）
+    - **重要**: Windows 環境では、python および pip を Path 環境変数に含める必要があります。
+    - **重要**: `python --version` で現在インストールされている Python のバージョンを確認することができます。 Ubuntu を使用している場合、`sudo apt install python-is-python3` で `python` と `python3` をリンクさせることができます。    
+- [Node.js](https://nodejs.org/en/download/)（version 14.18以降推奨）
+- [Git](https://git-scm.com/downloads)
+- [Powershell 7+ (pwsh)](https://github.com/powershell/powershell) - Windows で実行する場合のみ
+   - **重要**: `pwsh.exe` が PowerShell コマンドとして実行できることを確認して下さい。
+
+>注意: 実行するユーザの AAD アカウントは、`Microsoft.Authorization/roleAssignments/write` 権限を持っている必要があります。この権限は [ユーザーアクセス管理者](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#user-access-administrator) もしくは [所有者](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#owner)が保持しています。  
+`az role assignment list --assignee <your-Azure-email-address> --subscription <subscription-id> --output table`
+
+### インストール
+
+このリポジトリをクローンし、フォルダをターミナルで開きます。
+- Windows の場合は pwsh ターミナルで実行します。
+- Linux や Dev Container の場合は bash ターミナルで実行します
+
+#### ユーザーやサブスクリプションの確認
+
+1. `az login` を実行して Azure にログインします。
+1. `az account list -o table` を実行してデプロイに使用する サブスクリプション ID を控えておきます。
+1. `az account set -s YOUR_SUBSCRIPTION_ID` を実行して控えておいたサブスクリプション ID を既定値に設定します。
+1. `az ad signed-in-user show -o tsv --query id` を実行して、ログイン中のユーザの AAD アカウントのオブジェクトID を取得します。
+1. 取得したオブジェクトID を環境変数 `AZURE_PRINCIPAL_ID` にセットします。
+    - Windows 環境で実行している場合は、`$Env:AZURE_PRINCIPAL_ID="Your Object ID"`を実行します。
+    - Linux 環境で実行している場合は、`export AZURE_PRINCIPAL_ID="Your Object ID"`を実行します。
+
+#### プロジェクトの初期化
+
+新規に環境をデプロイする場合は、以下のコマンドを実行してください。
+
+1. `azd auth login` を実行します。
+1. `azd init` を実行します。
+    - `? Enter a new environment name: ` というメッセージとともに、環境名を入力するように求められます。この環境名は、Azure 上にデプロイするリソースやリソースグループの名前の一部になります。１つの Azure サブスクリプションに複数の環境を構築する場合は名前が衝突しないように異なる名前を付けてください。
+    - 例） aoai-sample
+    - `.azure` ディレクトリおよび環境名のディレクトリとともに、各種の構成情報を格納するファイルが作成されます。
+1. `azd up` を実行します。
+    - `? Select an Azure Subscription to use:` というメッセージが表示されたら、上記で設定したサブスクリプションを選択してください。
+    - `? Select an Azure location to use:` というメッセージが表示されたら、デプロイしたい Azure リージョンを選択してください。
+        - 現在、このサンプルに必要な Azure Open AI のモデルは該当モデルをサポートしている**東日本**リージョンにデプロイすることが可能です。最新の情報は[こちら](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/concepts/models)を参考にしてください。
+    - その後 Azure 上に必要なリソースをデプロイし、アプリケーションのビルドとデプロイが実行されます。また、`./data`配下の PDF を利用して Search Index を作成します。
+    - Linux 環境で実行している場合は、`chmod +x scripts/prepdocs.sh`
+    - しばらくすると `Enter a value for the 'vmLoginPassword' infrastructure parameter:` というメッセージが表示され仮想マシンのパスワードを求められますが、この手順では仮想マシンを利用しないためパスワードは入力せずに Enter を押してください。
+    - その後 `Save the value in the environment for future use (y/N) ` というメッセージが表示されますが、この手順では仮想マシンを利用しないため `N` を入力してください。
+1. コマンドの実行が終了すると、アプリケーションにアクセスする為の URL が表示されます。この URL をブラウザで開き、サンプルアプリケーションの利用を開始してください。  
+
+コマンド実行結果の例：
+
+!['Output from running azd up'](assets/endpoint.png)
+    
+> 注意: アプリケーションのデプロイ完了には数分かかることがあります。"Python Developer" のウェルカムスクリーンが表示される場合は、数分待ってアクセスし直してください。
+
+#### アプリケーションのローカル実行 {#run_app_locally}
+
+アプリケーションをローカルで実行する場合には、以下のコマンドを実行してください。`azd up`で既に Azure 上にリソースがデプロイされていることを前提にしています。
+
+1. `azd login` を実行する。
+2. `src` フォルダに移動する。
+3. `./start.ps1` もしくは `./start.sh` を実行します。
+
+#### VS Codeでのデバッグ実行
+
+1. [Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) をインストール
+1. メニューから `Run > Add Configuration...` を選択
+1. Select Debugger で `Python` を選択
+1. Debug Configuration で `Python file` を選択
+1. `.vscode` ディレクトリに追加された `launch.json` を開いて下記のように修正する
+    - `"program": "${workspaceFolder}/src/backend/app.py"` に変更
+    - `"envFile": "${workspaceFolder}/.azure/YOUR_ENVIRONMENT_NAME/.env"` を追加
+1. ターミナルで `src/backend` ディレクトリに移動し、`pip install -r requirements.txt` を実行
+1. ソースコードの適当な場所にブレークポイントを設置
+1. メニューから Run > Start Debugging を選択、または F5 キーを押下
+1. Web ブラウザで `http://localhost:5000` にアクセス
+
+#### FrontendのJavaScriptのデバッグ
+1. src/frontend/vite.config.tsのbuildに`minify: false`を追加
+2. ブラウザのDeveloper tools > Sourceでブレイクポイントを設定して実行
+
+#### 修正したコードのデプロイ
+
+既に Azure リソースがデプロイ済みのため `azd deploy` コマンドを実行します。
+
+#### デプロイしたリソースの削除
+
+1. `azd down` コマンドを実行します。
+1. 削除処理の確認メッセージ `? Total resources to delete:N, are you sure you want to continue? (y/N)` が表示されたら、`y` を入力してください。
+1. 物理削除の確認メッセージ `? Would you like to permanently delete these resources instead allowing theiir names to be reused?` が表示されたら、`y` を入力してください。
+    - Azure OpenAI Service や Form Recognizer は論理削除状態のため、物理削除（Purge）して良いか確認されます。
+
+
+#### 複数の環境を構築したい場合
+
+2 つ目以降の環境を追加したい場合は以下のコマンドを実行します。
+
+```bash
+# 環境の追加（.azure ディレクトリ配下に新しい環境名のディレクトリとファイルが作成されます）
+azd env new AnotherEnvName
+# デプロイの実行
+azd up --environment AnotherEnvName
 ```
 
-## 制限事項
-本レポジトリの内容の使用においては、次の制限、制約をご理解の上、活用ください。
-+ 目的外利用の禁止  
-本レポジトリは Microsoft Azure 上において、システムやソリューションの円滑かつ安全な構築に資することを目的に作成されています。この目的に反する利用はお断りいたします。
-+ フィードバック  
-本レポジトリの記載内容へのコメントやフィードバックをいただけます場合は、担当の日本マイクロソフト社員にご連絡ください。なお、個別質問への回答やフィードバックへの対応はお約束できないことを、ご了承いただけますようお願い申し上げます。
-+ 公式情報の確認  
-本レポジトリは日本マイクロソフトの有志のエンジニアによって作成されたものです。そのため、この記載内容は Microsoft として公式に表明されたものではなく、日本マイクロソフトおよび米国 Microsoft Corporation は一切の責任を負いません。また、本書の記載内容について Azure サポートへお問い合わせいただいても、回答することはできません。  
-Microsoft Azure の公式情報については、Azure のドキュメントをご確認ください。
-+ 免責  
-本レポジトリの記載内容によって発生したいかなる損害についても、日本マイクロソフトおよび米国 Microsoft Corporation は一切の責任を負いません。
+### GPT-4モデルの利用
+2023年6月現在、GPT-4 モデルは申請することで利用可能な状態です。このサンプルは GPT-4 モデルのデプロイに対応していますが、GPT-4 モデルを利用する場合には、[こちら](https://learn.microsoft.com/ja-jp/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal#deploy-a-model)を参考に、GPT-4 モデルをデプロイしてください。また、GPT-4 モデルの利用申請は[こちらのフォーム](https://aka.ms/oai/get-gpt4)から可能です。
 
-## Resources
-- [What is Azure OpenAI?](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview)
-- [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct)
-- [Security Reporting Instructions](https://docs.opensource.microsoft.com/content/releasing/security.html)
+GPT-4 モデルのデプロイ後、以下の操作を実行してください。
 
-## Trademarks
-Trademarks This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party’s policies.
+1. このサンプルをデプロイした際に、プロジェクトのディレクトリに `./${環境名}/.env` ファイルが作成されています。このファイルを任意のエディタで開きます。
+1. 以下の行を探して、デプロイした GPT-4 モデルのデプロイ名を指定してください。
+```
+AZURE_OPENAI_GPT_4_DEPLOYMENT="gpt-4-deploy" # GPT-4モデルのデプロイ名
+AZURE_OPENAI_GPT_4_32K_DEPLOYMENT="gpt-4-32k-deploy" # GPT-4-32Kモデルのデプロイ名
+```
+1. `azd up` を実行します。
+
+GPT-4 モデルは、チャット機能、文書検索機能のオプションで利用することができます。
+
+### Easy Authの設定（オプション）
+必要に応じて、Azure AD に対応した Easy Auth を設定します。Easy Auth を設定した場合、UI の右上にログインユーザのアカウント名が表示され、チャットの履歴ログにもアカウント名が記録されます。
+Easy Auth の設定は、[こちら](https://learn.microsoft.com/ja-jp/azure/app-service/scenario-secure-app-authentication-app-service)を参考にしてください。
+
+## 本番稼働を視野にいれる場合の考慮事項
+本番稼働（や本番に近い検証環境等）を視野にいれる場合、様々な考慮事項があります。考えられる考慮事項は[Cloud Adoption Framework](https://learn.microsoft.com/azure/cloud-adoption-framework/overview)や[Well-Architected Framework](https://learn.microsoft.com/azure/well-architected/)にまとめられていますが、考慮事項は多岐にわたるので、状況に応じて重要度や緊急度等をもとにした優先順位付けが必要になります。例えば、社内データと連携する場合にはプライベートネットワークを考慮した設計や企業のAzure基盤との連携が重要になること多くなるとことが推測されます。
+
+### Azure共通基盤との連携
+PoC/検証等の目的で小さく始めた後に、本番稼働を視野にいれる場合には、社内ガバナンス等を意識する必要があります。その際は、[Azure Cloud Adoption Framework](https://learn.microsoft.com/azure/cloud-adoption-framework/overview)で紹介されている [Azure Enterprise Scale Landing Zone](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/)や[Azure CAF Landing Zones 設計・構築ハンズオン](https://github.com/nakamacchi/AzureCAF.LandingZones.Demo)等を参考にすることを推奨します。Azure Enterprise Scale Landing Zoneの概念において、こちらのサンプルアプリケーションは、[アプリケーションランディングゾーン](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/#platform-landing-zones-vs-application-landing-zones)内にデプロイされるものに相当します。
+
+### プライベートネットワーク構成
+- [Bicepを活用した構築ガイダンス](https://github.com/Azure-Samples/jp-azureopenai-samples/blob/main/5.internal-document-search/deploy_private_endpoint_ennabled.md)
+- [Azure CLIを活用した構築ガイダンス](https://github.com/nakamacchi/AzureCAF.LandingZones.Demo/blob/master/41.Spoke%20D%20(AOAI)%20%E7%A4%BE%E5%86%85%E6%96%87%E6%9B%B8%E6%A4%9C%E7%B4%A2%20%E3%82%A4%E3%83%B3%E3%83%95%E3%83%A9%E6%A7%8B%E7%AF%89/41_00_%E6%9C%AC%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6.md)
+
+### ナレッジベース設計
+#### Azure Search Indexの作成・更新方法
+本サンプルでは、`data/`ディレクトリにあるデータを、`scripts`にあるスクリプトでAzureにアップロードし、Azure Search Indexを作成する方法をとっています。Indexの更新のしやすさや検索結果の改善をする場合、サンプルのスクリプトを部分的に修正するのではなく、要件を整理した上で更新用のアプリケーション構築の用意等についての検討を推奨します。
+
+#### 検索結果の「良さ」や「精度」改善するための設計
+生成AIは確率的な性質を持つため、同じ入力に対しても異なる出力が生成される可能性があります。このような性質は、生成AIが多様な出力を生成できる利点でもありますが、一方で評価が難しくなる場合もあります。そのため、生成AIの「良さ」や「精度」を一様に評価するのは困難であり、用途や目的に応じて評価基準が設定されることが多いです。
+
+生成AIの「良さ」や「精度」を一様に評価するのは困難ではありますが、以下の様なことを考慮すると、エンドユーザの検索結果に対する満足度を高めることができる可能性があります。
+- **PDFファイルの分割方法**: 本サンプルでは与えられたPDFを機械的にページ単位で分割していますが。PDFファイルの分割方法の改善することにより検索結果の良さを高めることができる可能性があります。
+- **画像・複雑な図表・PDF以外のファイルフォーマットの扱い**: 本サンプルはPDFファイルの扱いを前提としており、画像や複雑な図表を検索結果で活用することはできません。画像・複雑な図表・PDF以外のファイルフォーマットの扱いも重要なユースケースの場合、ナレッジベース設計を見直す必要がある可能性があります。
+- **各モデルの最大トークン数による制約**: 本サンプルの文書検索の結果から返答を作成する過程において、最大トークン数の制約から文書の1024トークンのみを利用しています。この制約により、文書の内容を十分に活用できていない可能性があります。この制約を緩和することにより、検索結果の精度を高めることができる可能性があります。

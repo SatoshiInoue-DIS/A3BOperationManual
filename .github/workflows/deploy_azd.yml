@@ -1,0 +1,95 @@
+name: 'deployment-azd'
+
+on: [workflow_dispatch]
+# azd を使用して Azure にデプロイする GitHub Actions ワークフロー
+# Azure への接続に必要なシークレットを構成するには、`azd pipeline config` を実行するだけです
+# シークレットレス Azure フェデレーション資格情報を使用してデプロイするためのアクセス許可を設定します
+# https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#set-up-azure-login-with-openid-connect-authentication
+
+# これらの権限は、GitHub の OIDC トークン エンドポイントと対話するために必要です。
+# https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+permissions:
+  # id-tokenはGitHub Actions内でOIDCを使う際に使用
+  id-token: write
+  contents: read
+
+# 処理の最上位単位
+jobs:
+  # ジョブID
+  build:
+    # ジョブを実行するOS(ランナー)を指定.実行する際にSet up jobsという項目から確認できる
+    runs-on: windows-latest
+    # 環境ごとに異なるSecrets/Variablesを定義できる機能
+    environment:
+      name: Production
+    # ワークフロー内に環境変数を設定. GitHubのリポジトリページからSettings>secrets and variables>Actions
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      # secretsも環境変数を格納. 見られたくない情報を格納するときに使う
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+    # 一つのjobsは1つ以上のstepsで構成 https://github.com/marketplace?type=actions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install azd
+        uses: Azure/setup-azd@v0.1.0
+
+      - name: Login azure
+        uses: azure/login@v1
+        with:
+          # シークレットとして保存されているAzureの資格情報を使用
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          # Azure PowerShellセッションを有効にする。
+          enable-AzPSSession: true
+
+      # フェデレーション認証でAzureにログイン
+      - name: Log in with Azure (Federated Credentials)
+        if: ${{ env.AZURE_CLIENT_ID != '' }}
+        # 実行するコマンドを記載するrun.
+        run: |
+          azd auth login `
+            --client-id "$Env:AZURE_CLIENT_ID" `
+            --federated-credential-provider "github" `
+            --tenant-id "$Env:AZURE_TENANT_ID"
+        shell: pwsh
+
+      # Azureのクライアント資格情報を使用してログイン
+      - name: Log in with Azure (Client Credentials)
+        if: ${{ env.AZURE_CREDENTIALS != '' }}
+        run: |
+          $info = $Env:AZURE_CREDENTIALS | ConvertFrom-Json -AsHashtable;
+          Write-Host "::add-mask::$($info.clientSecret)"
+
+          azd auth login `
+            --client-id "$($info.clientId)" `
+            --client-secret "$($info.clientSecret)" `
+            --tenant-id "$($info.tenantId)"
+        shell: pwsh
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDEfNTIALS }}
+      
+      # azd provision --no-prompt コマンドを使用してインフラストラクチャをプロビジョニング（セットアップ）
+      - name: Provision Infrastructure
+        run: |
+          azd provision --no-prompt
+        shell: pwsh
+        env:
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_PRINCIPAL_TYPE: ${{ vars.AZURE_PRINCIPAL_TYPE }}
+
+      # azd deploy --no-prompt コマンドを使用してアプリケーションをデプロイ
+      - name: Deploy Application
+        run: |
+          azd deploy --no-prompt
+        shell: pwsh
+        env:
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_PRINCIPAL_TYPE: ${{ vars.AZURE_PRINCIPAL_TYPE }}
+          
