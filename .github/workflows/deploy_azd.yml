@@ -69,7 +69,7 @@ jobs:
             --tenant-id "$($info.tenantId)"
         shell: pwsh
         env:
-          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDEfNTIALS }}
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       
       # azd provision --no-prompt コマンドを使用してインフラストラクチャをプロビジョニング（セットアップ）
       - name: Provision Infrastructure
