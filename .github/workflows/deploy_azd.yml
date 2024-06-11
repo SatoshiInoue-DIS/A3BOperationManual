@@ -44,7 +44,7 @@ jobs:
         uses: Azure/setup-azd@v0.1.0
 
       - name: Login azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           # シークレットとして保存されているAzureの資格情報を使用
           creds: ${{ env.AZURE_CREDENTIALS }}
