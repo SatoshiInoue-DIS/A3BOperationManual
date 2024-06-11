@@ -28,13 +28,13 @@ jobs:
       AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       # secretsも環境変数を格納. 見られたくない情報を格納するときに使う
-      AZURE_CREDENTIALS:  |
-            {
-              "clientId": "${{ vars.AZURE_CLIENT_ID }}",
-              "clientSecret": "${{ vars.AZURE_CLIENT_SECRET }}",
-              "subscriptionId": "${{ vars.AZURE_SUBSCRIPTION_ID }}",
-              "tenantId": "${{ vars.AZURE_TENANT_ID }}"
-            }
+      # AZURE_CREDENTIALS:  |
+      #       {
+      #         "clientId": "${{ vars.AZURE_CLIENT_ID }}",
+      #         "clientSecret": "${{ vars.AZURE_CLIENT_SECRET }}",
+      #         "subscriptionId": "${{ vars.AZURE_SUBSCRIPTION_ID }}",
+      #         "tenantId": "${{ vars.AZURE_TENANT_ID }}"
+      #       }
     # 一つのjobsは1つ以上のstepsで構成 https://github.com/marketplace?type=actions
     steps:
       - name: Checkout
