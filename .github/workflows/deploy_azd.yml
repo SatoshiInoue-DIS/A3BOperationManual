@@ -51,16 +51,16 @@ jobs:
           # Azure PowerShellセッションを有効にする。
           enable-AzPSSession: true
 
-      # フェデレーション認証でAzureにログイン
-      - name: Log in with Azure (Federated Credentials)
-        if: ${{ env.AZURE_CLIENT_ID != '' }}
-        # 実行するコマンドを記載するrun.
-        run: |
-          azd auth login `
-            --client-id "$Env:AZURE_CLIENT_ID" `
-            --federated-credential-provider "github" `
-            --tenant-id "$Env:AZURE_TENANT_ID"
-        shell: pwsh
+      # # フェデレーション認証でAzureにログイン
+      # - name: Log in with Azure (Federated Credentials)
+      #   if: ${{ env.AZURE_CLIENT_ID != '' }}
+      #   # 実行するコマンドを記載するrun.
+      #   run: |
+      #     azd auth login `
+      #       --client-id "$Env:AZURE_CLIENT_ID" `
+      #       --federated-credential-provider "github" `
+      #       --tenant-id "$Env:AZURE_TENANT_ID"
+      #   shell: pwsh
 
       # Azureのクライアント資格情報を使用してログイン
       - name: Log in with Azure (Client Credentials)
