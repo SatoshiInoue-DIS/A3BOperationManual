@@ -42,6 +42,7 @@ jobs:
         with:
           # シークレットとして保存されているAzureの資格情報を使用
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+          
           # Azure PowerShellセッションを有効にする。
           enable-AzPSSession: true
 
