@@ -7,6 +7,8 @@ from flask import Flask, request, jsonify
 import tiktoken
 import openai
 
+from dotenv import load_dotenv
+
 from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchClient
 from azure.storage.blob import BlobServiceClient
@@ -17,6 +19,8 @@ from approaches.chatread import ChatReadApproach
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 
+# .envファイルの内容を読み込見込む
+load_dotenv()
 
 # Replace these with your own values, either in environment variables or directly here
 AZURE_STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")

@@ -10,6 +10,10 @@ from enum import Enum
 from azure.cosmos import CosmosClient
 from azure.identity import DefaultAzureCredential
 
+from dotenv import load_dotenv
+# .envファイルの内容を読み込見込む
+load_dotenv()
+
 # CosmosDB
 endpoint = os.environ.get("AZURE_COSMOSDB_ENDPOINT")
 key = os.environ.get("COSMOSDB_KEY")
