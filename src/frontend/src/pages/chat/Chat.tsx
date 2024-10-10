@@ -1,17 +1,63 @@
-import { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { TextField, Panel, DefaultButton } from "@fluentui/react";
 import { Dropdown, IDropdownOption } from "@fluentui/react/lib/Dropdown";
+import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 
 import styles from "./Chat.module.css";
-
-import { chatApi, Approaches, ChatResponse, GptChatRequest, GptChatTurn } from "../../api";
+import { UserConversations } from '../../api/models';
+import { chatApi, Approaches, ChatResponse, GptChatRequest, GptChatTurn, getConversationsHistoryApi, createJSTTimeStamp, getConversationContentApi } from "../../api";
 import { AnswerChat, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { UserChatMessage } from "../../components/UserChatMessage";
 import { SettingsButton } from "../../components/SettingsButton";
-import { ClearChatButton } from "../../components/ClearChatButton";
 
 const Chat = () => {
+    const { conversationId, onClearChat, conversationContent, updateReupdateResult, loginUser, handleConversationClick } = useOutletContext<{
+        conversationId: string | null,
+        onClearChat: (clearFunc: () => void) => void,
+        conversationContent: [user: string, response: ChatResponse][],
+        updateReupdateResult: (result: UserConversations) => void,
+        loginUser: string,
+        handleConversationClick: (id: string) => void;
+    }>();
+    const location = useLocation();
+
+    const clickedHistoryConversationId = location.state?.conversationId;
+    const clickedHistoryApproach = location.state?.approach;
+    useEffect(() => {
+        if (clickedHistoryConversationId) {
+            makeApiRequestForConversationContent(clickedHistoryConversationId, clickedHistoryApproach);  // ページ遷移後にAPIリクエスト
+        }
+    }, [clickedHistoryConversationId, clickedHistoryApproach]);
+
+    const [clickedConversationId, setClickedConversationId] = useState<string | null>(null);
+
+    const makeApiRequestForConversationContent = async (conversation_id: string, approach: string) => {
+        setClickedConversationId(conversation_id);
+        try {
+            const result = await getConversationContentApi(conversation_id, approach)
+            const content: [user: string, response: ChatResponse][] = [];
+            const messages = result.conversations
+            // ユーザーとアシスタントの会話ペアを抽出
+            for (let i = 0; i < messages.length; i += 2) {
+                const userMessage = messages[i];
+                const assistantMessage = messages[i + 1];
+                if (userMessage && assistantMessage && userMessage.role === 'user' && assistantMessage.role === 'assistant') {
+                    // contentにペアを追加
+                    content.push([
+                        userMessage.content,  // ユーザーのメッセージ内容
+                        { answer: assistantMessage.content } // アシスタントの回答 (ChatResponse型)
+                    ] as [user: string, response: ChatResponse]);
+                }
+            }
+            setAnswers(content);
+            handleConversationClick(conversation_id);  
+            localStorage.setItem('selectedConversationId', conversation_id);  // ローカルストレージに保存
+        } catch (error) {
+            console.error('Error in makeApiRequestForConversationContent:', error);
+        }
+    }
+
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
 
     const [gptModel, setGptModel] = useState<string>("gpt-3.5-turbo");
@@ -27,6 +73,9 @@ const Chat = () => {
     const [selectedAnswer, setSelectedAnswer] = useState<number>(0);
     const [answers, setAnswers] = useState<[user: string, response: ChatResponse][]>([]);
 
+    const [conversationTitle, setConversationTitle] = useState<string | null>(null);
+    const [] = useState<UserConversations>();
+
     const gpt_models: IDropdownOption[] = [
         { key: "gpt-3.5-turbo", text: "gpt-3.5-turbo" },
         { key: "gpt-3.5-turbo-16k", text: "gpt-3.5-turbo-16k" },
@@ -35,10 +84,17 @@ const Chat = () => {
     ];
 
     const temperatures: IDropdownOption[] = Array.from({ length: 11 }, (_, i) => ({ key: (i / 10).toFixed(1), text: (i / 10).toFixed(1) }));
+    const [timestamp, setTimestamp] = useState<string | null>(null);
+    // conversationIdが更新されたときにtimestampをリセット
+    useEffect(() => {
+        setTimestamp(null);
+    }, [conversationId]);
 
     const makeApiRequest = async (question: string) => {
+        // 初回のリクエスト時にtimestampを設定
+        let japanTimeStamp = timestamp === null ? createJSTTimeStamp() : timestamp;
+        setTimestamp(japanTimeStamp);
         lastQuestionRef.current = question;
-
         error && setError(undefined);
         setIsLoading(true);
 
@@ -50,8 +106,12 @@ const Chat = () => {
                 overrides: {
                     gptModel: gptModel,
                     temperature: temperature,
-                    systemPrompt: systemPrompt
-                }
+                    systemPrompt: systemPrompt,
+                },
+                conversation_id: conversationId,
+                timestamp: japanTimeStamp,
+                conversation_title: conversationTitle,
+                loginUser: loginUser,
             };
             const result = await chatApi(request);
             setAnswers([...answers, [question, result]]);
@@ -59,16 +119,32 @@ const Chat = () => {
             setError(e);
         } finally {
             setIsLoading(false);
+            const reupdate_result: UserConversations = await getConversationsHistoryApi(loginUser);
+            updateReupdateResult(reupdate_result);
         }
     };
 
-    const clearChat = () => {
+    // error が何であってもエラー状態をリセットする
+    const clearChat = useCallback(() => {
         lastQuestionRef.current = "";
-        error && setError(undefined);
+        setError(undefined);
         setAnswers([]);
-    };
+    }, []);
 
-    useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }), [isLoading]);
+    // Chat コンポーネントがマウントされた時に clearChat 関数を親に渡す
+    useEffect(() => {
+        onClearChat(clearChat);
+    }, [clearChat, onClearChat]);
+
+    useEffect(() => {
+        if (conversationContent) {
+            setAnswers(conversationContent); // conversationContent が更新されたら answers にセット
+        }
+    }, [conversationContent]);
+
+    useEffect(() => {
+        chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" })
+    }, [answers, isLoading]);
 
     const onGptModelChange = (_ev?: React.FormEvent<HTMLDivElement>, option?: IDropdownOption) => {
         if (option !== undefined) {
@@ -86,10 +162,14 @@ const Chat = () => {
         }
     };
 
+    useEffect(() => {
+        onClearChat
+        handleConversationClick("clearID")
+    }, []);
+
     return (
         <div className={styles.container}>
             <div className={styles.commandsContainer}>
-                <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading} />
                 <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />
             </div>
             <div className={styles.chatRoot}>
@@ -99,6 +179,9 @@ const Chat = () => {
                             <div key={index}>
                                 <UserChatMessage message={answer[0]} />
                                 <div className={styles.chatMessageGpt}>
+                                    <div className={styles.botThumbnailContainer}>
+                                        <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
+                                    </div>
                                     <AnswerChat key={index} answer={answer[1]} isSelected={selectedAnswer === index} />
                                 </div>
                             </div>
@@ -107,6 +190,9 @@ const Chat = () => {
                             <>
                                 <UserChatMessage message={lastQuestionRef.current} />
                                 <div className={styles.chatMessageGptMinWidth}>
+                                    <div className={styles.botThumbnailContainer}>
+                                        <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
+                                    </div>
                                     <AnswerLoading />
                                 </div>
                             </>
@@ -115,6 +201,9 @@ const Chat = () => {
                             <>
                                 <UserChatMessage message={lastQuestionRef.current} />
                                 <div className={styles.chatMessageGptMinWidth}>
+                                    <div className={styles.botThumbnailContainer}>
+                                        <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
+                                    </div>
                                     <AnswerError error={error.toString()} onRetry={() => makeApiRequest(lastQuestionRef.current)} />
                                 </div>
                             </>

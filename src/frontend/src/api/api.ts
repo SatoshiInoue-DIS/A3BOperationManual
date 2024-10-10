@@ -1,4 +1,4 @@
-import { AskRequest, AskResponse, GptChatRequest, ChatRequest, ChatResponse } from "./models";
+import { AskRequest, AskResponse, GptChatRequest, ChatRequest, ChatResponse, UserConversations, ConversationContent, DeleteResponse, DocSearchConversationContent } from "./models";
 
 export async function askApi(options: AskRequest): Promise<AskResponse> {
     const response = await fetch("/ask", {
@@ -30,7 +30,11 @@ export async function searchdocApi(options: ChatRequest): Promise<AskResponse> {
         body: JSON.stringify({
             history: options.history,
             approach: options.approach,
-            overrides: options.overrides
+            overrides: options.overrides,
+            conversationId: options.conversation_id,
+            timestamp: options.timestamp,
+            conversation_title: options.conversation_title,
+            loginUser: options.loginUser,
         })
     });
 
@@ -51,7 +55,11 @@ export async function chatApi(options: GptChatRequest): Promise<ChatResponse> {
         body: JSON.stringify({
             history: options.history,
             approach: options.approach,
-            overrides: options.overrides
+            overrides: options.overrides,
+            conversationId: options.conversation_id,
+            timestamp: options.timestamp,
+            conversation_title: options.conversation_title,
+            loginUser: options.loginUser,
         })
     });
 
@@ -65,4 +73,88 @@ export async function chatApi(options: GptChatRequest): Promise<ChatResponse> {
 
 export function getCitationFilePath(citation: string): string {
     return `/content/${citation}`;
+}
+
+export async function getConversationsHistoryApi(loginUser: string): Promise<UserConversations> {
+    const response = await fetch("/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body:  JSON.stringify({
+            loginUser: loginUser
+        })
+    });
+    // レスポンスが成功していない場合にエラーをスローする
+    if (!response.ok) {
+        const errorText = await response.text();  // HTMLエラーページかもしれないのでtextで取得
+        throw new Error(`Request failed with status ${response.status}: ${errorText}`);
+    }
+    const parsedResponse: UserConversations = await response.json();
+    return parsedResponse;
+}
+
+export async function getConversationContentApi(conversation_id: string, approach: string): Promise<ConversationContent> {
+    const response = await fetch("/conversationcontent", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            conversation_id: conversation_id,
+            approach: approach
+        })
+    });
+    const parsedResponse: ConversationContent = await response.json();
+    if (response.status > 299 || !response.ok) {
+        throw Error(parsedResponse.error || "Unknown error");
+    }
+    return parsedResponse;
+}
+
+export async function getDocSearchConversationContentApi(conversation_id: string, approach: string): Promise<DocSearchConversationContent> {
+    const response = await fetch("/conversationcontent/docsearch", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            conversation_id: conversation_id,
+            approach: approach
+        })
+    });
+    const parsedResponse: DocSearchConversationContent = await response.json();
+    if (response.status > 299 || !response.ok) {
+        throw Error(parsedResponse.error || "Unknown error");
+    }
+    return parsedResponse;
+}
+
+export async function deleteConersationApi(conversation_id: string): Promise<DeleteResponse> {
+    const response = await fetch("/delete", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            conversation_id: conversation_id
+        })
+    });
+    const parsedResponse: DeleteResponse = await response.json();
+    if (response.status > 299 || !response.ok) {
+        throw Error(parsedResponse.error || "Unknown error");
+    }
+    return parsedResponse;
+}
+
+export const createJSTTimeStamp = () => {
+    const currentTime = new Date();
+    const year = currentTime.getFullYear();
+    const month = String(currentTime.getMonth() + 1).padStart(2, '0'); // 月は0から始まるため1を足す
+    const day = String(currentTime.getDate()).padStart(2, '0');
+    const hours = String(currentTime.getHours()).padStart(2, '0');
+    const minutes = String(currentTime.getMinutes()).padStart(2, '0');
+    const seconds = String(currentTime.getSeconds()).padStart(2, '0');
+    const JSTTimeStamp = `${year}${month}${day}${hours}${minutes}${seconds}`;
+    return JSTTimeStamp
 }

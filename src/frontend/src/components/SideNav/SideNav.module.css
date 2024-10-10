@@ -1,0 +1,283 @@
+.SideNav {
+    width: 260px;
+    padding-top: 20px;
+    background: #f2f2f2;
+    transition: 0.5s;
+}
+
+.CloseSideNav {
+    width: 50px;
+    padding-top: 20px;
+    padding-left: 12px;
+    transition: 0.5s;
+}
+.SideNav button, .CloseSideNav button {
+    border: none;
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+    cursor : pointer;
+}
+
+.SideNavContainer {
+    padding-left: .75rem;
+    padding-right: .75rem;
+    height: 100%;
+}
+
+.SideNavHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.SideNavList {
+    display: flex;
+    flex-wrap: wrap;
+    transition: 0.5s;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    height: calc(100% - 66.75px);
+    align-content: flex-start;
+    width: calc(100% + 10px);
+}
+
+.SideNavList::-webkit-scrollbar {
+    width: 8px;
+}
+.SideNavList::-webkit-scrollbar-thumb {
+    background: #e4e3df;
+    width: 6px;
+    border-radius: 5px;
+}
+
+.ConversationHistoryContainer {
+    width: 100%;
+}
+
+.HistoryGroupName {
+    font-size: 13px;
+}
+
+.HistoryByDateContainer {
+    padding-left: 0px;
+}
+
+.HistoryTitles {
+    list-style-type: none;
+    padding-left: 0px;
+    margin-top: 5px;
+    margin-bottom: 25px;
+}
+.HistoryTitleContainer {
+    display: flex;
+    align-items: center;
+    height: 40px;
+}
+
+.HistoryTitleContainer:hover {
+    background-color: #e4e3df;
+    border-radius: 5px;
+}
+.HistoryTitleContainer.clicked {
+    background-color: #e4e3df;
+    border-radius: 5px;
+}
+
+.HistoryTitleContainer:hover .HistoryOptionBtnContainer {
+    opacity: 1;
+}
+
+.HistoryTitleContainer>a {
+    width: 190px;
+    padding-left: 10px;
+    cursor : pointer;
+}
+
+.ChatTitle {
+    white-space: nowrap;
+    overflow: hidden;
+    color: transparent; /* 文字色を透明に */
+    background: linear-gradient(to right, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.5)); /* 左から右にグラデーション */
+    -webkit-background-clip: text; /* 背景を文字にクリップ */
+    background-clip: text; /* 背景を文字にクリップ */
+}
+
+.HistoryOptionBtnContainer {
+    width: 70px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    z-index: 1000;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+}
+
+.HistoryOptionBtnContainer:hover .HistoryOptionBtn {
+    color: #000;
+}
+
+.HistoryOptionBtn {
+    --tw-gradient-from-position: 60%;
+    left: 226px;
+    display: inline-block;
+    vertical-align: middle;
+    color: #969696;
+    line-height: 1;
+    width: 0.25em;
+    height: 0.25em;
+    background: currentColor;
+    border-radius: 50%;
+    box-shadow: -0.375em 0 0 0 currentColor, 0.375em 0 0 0 currentColor;
+}
+
+.menucontainer {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    min-width: 180px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+}
+
+.menucontainer.show {
+    display: block;
+}
+
+.menucontainer>ol {
+    list-style-type: none;
+    padding: 10px;
+    margin: 0;
+}
+
+.menucontainer>ol>li {
+    padding: 10px;
+    font-size: 14px;
+}
+
+.menucontainer>ol>li:hover {
+    background-color: #e4e3df;
+    border-radius: 5px;
+}
+
+.deleteContainer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.SwitchgearBtnContainer {
+    padding-top: 4px;
+    width: 40px;
+    height: 40px;
+}
+
+.SwitchgearBtnContainer:hover {
+    background-color: #e4e3df;
+    border-radius: 5px;
+}
+
+.NewChatBtnContainer {
+    padding-top: 4px;
+    padding-left: 6px;
+    width: 40px;
+    height: 40px;
+    cursor : pointer;
+}
+
+.NewChatBtnContainer:hover {
+    background-color: #e4e3df;
+    border-radius: 5px;
+}
+
+.DelModalContainer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1002;
+    animation: _src_components_Modal_module__fadeon 0.3s ease 0s;
+    overflow: hidden;
+}
+
+.DelModalBody {
+    background-color: #fff;
+    min-width: 500px;
+    min-height: 270px;
+    border-radius: 15px;
+}
+
+.DelModalBox {
+    display: flex;
+    flex-direction: column;
+}
+
+.DelModalMain {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: stretch;
+    margin: 20px 30px 10px;
+    min-height: 148px;
+    justify-content: space-around;
+}
+
+.DelModalHeaderContainer {
+    border-bottom: solid 1px #000;
+    
+}
+
+.DelModalHeader {
+    font-size: 20px;
+    height: auto;
+    margin: 30px;
+}
+
+.DelModalFooter {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cancelBtnContainer {
+    margin: 0 10px;
+}
+
+.cancelBtnContainer>button {
+    border-radius: 20px;
+    background: #fff;
+    width: 120px;
+    height: 40px;
+    border: solid 1px;
+}
+
+.cancelBtnContainer>button:hover {
+    background: #E6E6E6;
+    border: solid 1px #000;
+}
+
+.delBtnContainer>button {
+    border-radius: 20px;
+    background: #c01a1a;
+    width: 120px;
+    height: 40px;
+    border: solid 1px;
+    color: #fff;
+}
+
+.delBtnContainer>button:hover {
+    background: #960a0a;
+    border: solid 1px #000;
+}
+

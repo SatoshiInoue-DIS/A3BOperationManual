@@ -53,7 +53,7 @@ source quesion: {user_question}
         self.content_field = content_field
         self.semantic_conf_name = semantic_conf_name
     
-    def run(self, user_name: str, history: list[dict], overrides: dict) -> any:
+    def run(self, user_name: str, history: list[dict], overrides: dict, conversationId: str, timestamp: str, title: str) -> any:
         chat_model = overrides.get("gptModel")
         chat_gpt_model = get_gpt_model(chat_model)
         chat_deployment = chat_gpt_model.get("deployment")
@@ -156,14 +156,14 @@ source quesion: {user_question}
             temperature=temaperature, 
             max_tokens=1024,
             n=1)
-            
+        conversation_title = title
         response_text = response.choices[0]["message"]["content"]
         total_tokens += response.usage.total_tokens
 
         # logging
         # Azure Cosmos DBのコンテナーにプロンプトを登録
         input_text = history[-1]["user"]
-        write_chatlog(ApproachType.DocSearch, user_name, total_tokens, input_text, response_text, query_text)
+        write_chatlog(ApproachType.DocSearch, user_name, total_tokens, input_text, response_text, conversationId, timestamp, conversation_title, query_text)
         
         # 思考プロセス
         msg_to_display = '\n\n'.join([str(message) for message in messages])

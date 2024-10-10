@@ -39,6 +39,10 @@ export type ChatRequest = {
     history: ChatTurn[];
     approach: Approaches;
     overrides?: AskRequestOverrides;
+    conversation_id: string | null;
+    timestamp: string | null;
+    conversation_title: string | null;
+    loginUser: string;
 };
 
 export type GptChatTurn = {
@@ -50,6 +54,10 @@ export type GptChatRequest = {
     history: GptChatTurn[];
     approach: Approaches;
     overrides?: GptRequestOverrides;
+    conversation_id: string | null;
+    timestamp: string | null;
+    conversation_title: string | null;
+    loginUser: string;
 };
 
 export type GptRequestOverrides = {
@@ -76,3 +84,45 @@ export type AccessToken = {
     user_claims: Claim[];
     user_id: string;
 };
+
+type Message = {
+    role: 'user' | 'assistant';
+    content: string;
+};
+
+type DocSearchMessage = {
+    role: 'user' | 'bot';
+    content: string;
+};
+
+export type Conversation = {
+    conversation_id: string; // 会話のID
+    approach: string;
+    title: string;
+    timestamp: string // メッセージの配列
+};
+
+export type UserConversations = {
+    user_id: string; // ユーザーのID
+    conversations: Conversation[]; // 会話の配列
+    error?: string;
+}
+
+export type ConversationContent = {
+    conversation_id: string; // 会話のID
+    approach: string;
+    conversations: Message[]; // 会話の配列
+    error?: string;
+}
+
+export type DocSearchConversationContent = {
+    conversation_id: string; // 会話のID
+    approach: string;
+    conversations: DocSearchMessage[]; // 会話の配列
+    error?: string;
+}
+
+export type DeleteResponse = {
+    success: boolean;
+    error?: string;
+}

@@ -6,8 +6,10 @@ import logging
 import traceback
 from flask import request
 from opencensus.ext.azure.log_exporter import AzureLogHandler
+
 from enum import Enum
 from azure.cosmos import CosmosClient
+from azure.cosmos.exceptions import CosmosResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 
 from dotenv import load_dotenv
@@ -49,18 +51,90 @@ def get_user_name(req: request):
 
     return user_name
 
-def write_chatlog(approach: ApproachType, user_name: str, total_tokens: int, input: str, response: str, query: str=""):
-    properties = {
-        "approach" : approach.value,
-        "user" : user_name, 
-        "tokens" : total_tokens,
-        "input" : input,  
-        "response" : response
-    }
+# 特定のconversation_idを持つドキュメントを取得する
+def get_conversation(conversation_id):
+    try:
+        query = "SELECT * FROM c WHERE c.conversation_id = @conversation_id"
+        parameters = [{"name": "@conversation_id", "value": conversation_id}]
+        items = list(container.query_items(
+            query=query,
+            parameters=parameters,
+            enable_cross_partition_query=True
+        ))
+        if items:
+            return items[0]  # 最初の1件を返す
+        else:
+            return None
+    except Exception as e:  
+        print(f"Error in get_conversation: {str(e)}")  
+        return None  
 
-    if query != "":
-        properties["query"] = query
-    container.create_item(body=properties, enable_automatic_id_generation=True)
+def write_chatlog(approach: ApproachType, user_name: str, total_tokens: int, input: str, response: str, conversationId: str, timestamp: str, conversation_title: str, query: str=""):
+    # 既存の会話データを取得
+    conversation = get_conversation(conversationId)
+    # 既存の会話があればmessagesに追加
+    if conversation:
+        # 新しいメッセージを作成
+        new_message = [
+            {
+                "role" : "user",
+                "content" : input
+            }, 
+            {
+                "role" : "assistant" if approach.value == "chat" else "bot",
+                "content" : response
+            }
+        ]
+        
+        # 既存のmessagesリストに新しいメッセージを追加
+        if "messages" in conversation:  
+            conversation["messages"].extend(new_message)  
+        else:  
+            print("No 'messages' field found in the conversation document.")  
+            return  
+          
+        # データベースにドキュメントを更新  
+        try:  
+            container.upsert_item(conversation)  
+        except Exception as e:  
+            print(f"Error in upsert_item: {str(e)}")  
+        
+        # データベースにドキュメントを更新
+        container.upsert_item(conversation)
+    # 初めての会話なら全体を保存
+    else:
+        from app import creat_title
+        title = ""
+        if conversation_title is None :
+            title = creat_title(input)
+        else:
+            title = conversation_title
+
+        properties = {
+            "approach" : approach.value,
+            "user" : user_name, 
+            "tokens" : total_tokens,
+            "conversation_id" : conversationId,
+            "timestamp" : timestamp,
+            "conversation_title": title,
+            "messages" : [
+                {
+                    "role" : "user",
+                    "content" : input
+                },
+                {
+                    "role" : "assistant" if approach.value == "chat" else "bot",
+                    "content" : response
+                }
+            ]
+        }
+
+        if query != "":
+            properties["query"] = query
+        try:  
+            container.create_item(body=properties, enable_automatic_id_generation=True)  
+        except Exception as e:  
+            print(f"Error in create_item: {str(e)}")  
     
 
 def write_error(category: str, user_name: str, error: str):
@@ -73,3 +147,58 @@ def write_error(category: str, user_name: str, error: str):
     log_data = json.dumps(properties).encode('utf-8').decode('unicode-escape')
     traceback.print_exc()
     logger.error(log_data)
+
+def select_user_conversations(user_name: str):
+    try: 
+        query = """
+            SELECT c.approach, c.user, c.tokens, c.conversation_id, c.timestamp, c.conversation_title
+            FROM c
+            WHERE c.user = @user
+        """
+        parameters = [{"name": "@user", "value": user_name}]
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
+        return items
+    except Exception as e:  
+        print(f"Error in select_user_conversations: {str(e)}")
+        return None
+    
+def select_conversation_content(conversation_id: str, approach: str):
+    try: 
+        query = """
+            SELECT c.approach, c.user, c.tokens, c.conversation_id, c.messages
+            FROM c
+            WHERE c.conversation_id = @conversation_id
+            AND c.approach = @approach
+        """
+        parameters = [
+            {
+                "name": "@conversation_id", "value": conversation_id
+            }, {
+                "name": "@approach", "value": approach
+            }
+        ]
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
+        return items
+    except Exception as e:  
+        print(f"Error in select_conversation_content: {str(e)}")
+        return None
+    
+def delete_conversation_content(conversation_id: str):
+    try: 
+        query = """
+            SELECT *
+            FROM c
+            WHERE c.conversation_id = @conversation_id
+        """
+        parameters = [{"name": "@conversation_id", "value": conversation_id}]
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
+        if not items:
+            print(f"No items found for conversation_id: {conversation_id}")
+            return False
+        for item in items:
+            container.delete_item(item['id'], partition_key=item['id'])
+        return True
+    except Exception as e:  
+        print(f"Error in delete_conversation_content: {str(e)}")
+        return False
+    

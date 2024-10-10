@@ -1,48 +1,96 @@
-import { useState, useMemo } from "react";
-import { Outlet, NavLink, Link } from "react-router-dom";
-import { AccessToken, Claim } from "../../api";
-
-import github from "../../assets/github.svg";
-
+import React, { useState, useEffect } from "react";
+import { Outlet, NavLink, Link, useNavigate  } from "react-router-dom";
+import { getConversationContentApi } from "../../api"; 
+import { useMsalAuth } from "../../auth/useMsalAuth";
+import { SideNav } from "../../components/SideNav";
 import styles from "./Layout.module.css";
+import { ChatResponse, UserConversations, AskResponse } from '../../api/models';
+import { v4 as uuidv4 } from 'uuid';
 
-const Layout = () => {
-    const [loginUser, setLoginUser] = useState<string>("");
+const Layout = (): JSX.Element => {
+    const loginUser:string | null = useMsalAuth();
+    const [conversationId, setConversationId] = useState<string | null>(null);  
+    const [clearChatFunc, setClearChatFunc] = useState<() => void>(() => {});
+    const [conversationContent, setConversationContent] = useState<[user: string, response: ChatResponse | AskResponse][]>([]);
+    const [reupdateResult, setReupdateResult] = useState<UserConversations | null>(null);
+    const [approach, setApproach] = useState<string>("chat");
+    
+    useEffect(() => {
+        const savedConversationId = localStorage.getItem('selectedConversationId');  
+        if (savedConversationId) {  
+            setConversationId(savedConversationId);  
+            (async () => {
+                // await fetchConversationContent(savedConversationId);  
+            })();
+        } else {
+            // 新しいIDを生成し、localStorageに保存
+            const newId = uuidv4();
+            localStorage.setItem(`selectedConversationId`, newId);
+            setConversationId(newId);
+        }
+    }, []);
 
-    const getLoginUserName = async () => {
-        const loginUser: string = "";
-
-        try {
-            const result = await fetch("/.auth/me");
-
-            const response: AccessToken[] = await result.json();
-            const loginUserClaim = response[0].user_claims.find((claim: Claim) => claim.typ === "preferred_username");
-            if (loginUserClaim) setLoginUser(loginUserClaim.val);
-            else setLoginUser(response[0].user_id);
-        } catch (e) {
-            setLoginUser("anonymous");
+    // const fetchConversationContent = async (id: string) => {  
+    //     try {  
+    //         const result = await getConversationContentApi(id, approach);  
+    //         const content: [user: string, response: ChatResponse | AskResponse][] = [];  
+    //         const messages = result.conversations;  
+    //         for (let i = 0; i < messages.length; i += 2) {  
+    //             const userMessage = messages[i];  
+    //             const assistantMessage = messages[i + 1];  
+    //             if (userMessage && assistantMessage && userMessage.role === 'user' && assistantMessage.role === 'assistant') {  
+    //                 content.push([userMessage.content, { answer: assistantMessage.content }] as [user: string, response: ChatResponse | AskResponse]);  
+    //             }  
+    //         }  
+    //         setConversationContent(content);  
+    //     } catch (error) {  
+    //         console.error('Error in fetchConversationContent:', error);  
+    //     }
+    // };
+    
+    const handleConversationClick = (id: string) => {
+        if (id == "clearID") {
+            // IDを変更する
+            const newId = uuidv4();
+            localStorage.setItem('selectedConversationId', newId); // 新しいIDを保存
+            setConversationId(newId); // 新しいIDで状態を更新
+            setConversationContent([]);
+        } else {
+            setConversationId(id);  
+            // fetchConversationContent(id);  
+            localStorage.setItem('selectedConversationId', id);
         }
     };
+    // clearChat を Chat から受け取り、state に保存する
+    const handleSetClearChat = (clearFunc: () => void) => {
+        setClearChatFunc(() => clearFunc);
+    };
+    // SideNavでconversationContentを更新するための関数  
+    const updateConversationContent = (content: [user: string, response: ChatResponse | AskResponse][]) => {  
+        setConversationContent(content);
+    };
 
-    getLoginUserName();
+    const updateReupdateResult = (result: UserConversations) => {  
+        setReupdateResult(result);  
+    };
 
     return (
         <div className={styles.layout}>
             <header className={styles.header} role={"banner"}>
                 <div className={styles.headerContainer}>
                     <Link to="/" className={styles.headerTitleContainer}>
-                        <h3 className={styles.headerTitleLeft}>テスト</h3>
+                        <h3 className={styles.headerTitleLeft}>A3B_FAQ（IT基礎コース）</h3>
                     </Link>
                     <nav>
                         <ul className={styles.headerNavList}>
                             <li>
                                 <NavLink to="/" className={({ isActive }) => (isActive ? styles.headerNavPageLinkActive : styles.headerNavPageLink)}>
-                                    ChatBot
+                                    ChatGPT
                                 </NavLink>
                             </li>
                             <li className={styles.headerNavLeftMargin}>
                                 <NavLink to="/docsearch" className={({ isActive }) => (isActive ? styles.headerNavPageLinkActive : styles.headerNavPageLink)}>
-                                    テスト検索
+                                    研修テキスト内FAQ
                                 </NavLink>
                             </li>
                         </ul>
@@ -51,7 +99,28 @@ const Layout = () => {
                 </div>
             </header>
 
-            <Outlet />
+            <div className={styles.mainContainer}>
+                <SideNav
+                    conversationId={conversationId}
+                    onClick={handleConversationClick}
+                    clearChat={clearChatFunc}
+                    content={conversationContent}
+                    updateConversationContent={updateConversationContent}
+                    reupdateResult={reupdateResult}
+                    loginUser={loginUser}
+                />
+                <Outlet
+                    context={{
+                        conversationId,
+                        onClearChat: handleSetClearChat,
+                        conversationContent,
+                        updateReupdateResult,
+                        loginUser,
+                        approach,
+                        handleConversationClick
+                    }}
+                />
+            </div>
         </div>
     );
 };

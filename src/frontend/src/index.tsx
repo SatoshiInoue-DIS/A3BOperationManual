@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useOutletContext } from "react-router-dom";
 import { initializeIcons } from "@fluentui/react";
 
 import "./index.css";
@@ -14,7 +14,7 @@ initializeIcons();
 
 export default function App() {
     return (
-        <HashRouter>
+        <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Layout />}>
                     <Route index element={<Chat />} />
@@ -22,7 +22,7 @@ export default function App() {
                     <Route path="*" element={<NoPage />} />
                 </Route>
             </Routes>
-        </HashRouter>
+        </BrowserRouter>
     );
 }
 

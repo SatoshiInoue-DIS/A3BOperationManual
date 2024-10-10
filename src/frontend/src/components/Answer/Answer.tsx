@@ -16,20 +16,20 @@ interface Props {
     answer: AskResponse;
     isSelected?: boolean;
     onCitationClicked: (filePath: string) => void;
-    onThoughtProcessClicked: () => void;
-    onSupportingContentClicked: () => void;
-    onFollowupQuestionClicked?: (question: string) => void;
-    showFollowupQuestions?: boolean;
+    // onThoughtProcessClicked: () => void;
+    // onSupportingContentClicked: () => void;
+    // onFollowupQuestionClicked?: (question: string) => void;
+    // showFollowupQuestions?: boolean;
 }
 
 export const Answer = ({
     answer,
     isSelected,
     onCitationClicked,
-    onThoughtProcessClicked,
-    onSupportingContentClicked,
-    onFollowupQuestionClicked,
-    showFollowupQuestions
+    // onThoughtProcessClicked,
+    // onSupportingContentClicked,
+    // onFollowupQuestionClicked,
+    // showFollowupQuestions
 }: Props) => {
     const parsedAnswer = useMemo(() => parseAnswerToHtml(answer.answer, onCitationClicked), [answer]);
 
@@ -37,7 +37,7 @@ export const Answer = ({
 
     return (
         <Stack className={`${styles.answerContainer} ${isSelected && styles.selected}`} verticalAlign="space-between">
-            <Stack.Item>
+            {/* <Stack.Item>
                 <Stack horizontal horizontalAlign="space-between">
                     <AnswerIcon />
                     <div>
@@ -59,7 +59,7 @@ export const Answer = ({
                         />
                     </div>
                 </Stack>
-            </Stack.Item>
+            </Stack.Item> */}
 
             <Stack.Item grow>
                 <div className={styles.answerText}>
@@ -68,7 +68,7 @@ export const Answer = ({
             </Stack.Item>
 
             {!!parsedAnswer.citations.length && (
-                <Stack.Item>
+                <Stack.Item className={styles.citationFileBox}>
                     <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
                         <span className={styles.citationLearnMore}>引用:</span>
                         {parsedAnswer.citations.map((x, i) => {
@@ -83,7 +83,7 @@ export const Answer = ({
                 </Stack.Item>
             )}
 
-            {!!parsedAnswer.followupQuestions.length && showFollowupQuestions && onFollowupQuestionClicked && (
+            {/* {!!parsedAnswer.followupQuestions.length && showFollowupQuestions && onFollowupQuestionClicked && (
                 <Stack.Item>
                     <Stack horizontal wrap className={`${!!parsedAnswer.citations.length ? styles.followupQuestionsList : ""}`} tokens={{ childrenGap: 6 }}>
                         <span className={styles.followupQuestionLearnMore}>こんな質問も:</span>
@@ -96,7 +96,7 @@ export const Answer = ({
                         })}
                     </Stack>
                 </Stack.Item>
-            )}
+            )} */}
         </Stack>
     );
 };

@@ -12,7 +12,7 @@ from core.modelhelper import get_gpt_model, get_max_token_from_messages
 # (answer) with that prompt.
 class ChatReadApproach(Approach):
 
-    def run(self, user_name: str, history: list[dict[str, str]], overrides: dict[str, Any]) -> Any:
+    def run(self, user_name: str, history: list[dict[str, str]], overrides: dict[str, Any], conversationId: str, timestamp: str, title: str) -> Any:
         chat_model = overrides.get("gptModel")
         chat_gpt_model = get_gpt_model(chat_model)
         chat_deployment = chat_gpt_model.get("deployment")
@@ -37,13 +37,13 @@ class ChatReadApproach(Approach):
             temperature=temaperature, 
             max_tokens=max_tokens,
             n=1)
-
+        conversation_title = title
         response_text = chat_completion.choices[0]["message"]["content"]
         total_tokens = chat_completion.usage.total_tokens
 
         # logging
         input_text = history[-1]["user"]
-        write_chatlog(ApproachType.Chat, user_name, total_tokens, input_text, response_text)
+        write_chatlog(ApproachType.Chat, user_name, total_tokens, input_text, response_text, conversationId, timestamp, conversation_title)
 
         return { "answer": response_text }
     

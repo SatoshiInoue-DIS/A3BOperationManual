@@ -2,10 +2,19 @@ import os
 import time
 import mimetypes
 import urllib.parse
+import jwt
+import requests 
 from flask import Flask, request, jsonify
-
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+from base64 import urlsafe_b64decode
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
 import tiktoken
 import openai
+
+from core.messagebuilder import MessageBuilder
 
 from dotenv import load_dotenv
 
@@ -15,6 +24,7 @@ from azure.storage.blob import BlobServiceClient
 from approaches.chatlogging import get_user_name, write_error
 from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
 from approaches.chatread import ChatReadApproach
+from approaches.chatlogging import select_user_conversations, select_conversation_content, delete_conversation_content
 
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
@@ -106,6 +116,73 @@ configure_azure_monitor()
 
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
+AUTHORITY = "https://login.microsoftonline.com/"
+CLIENT_ID = ""
+
+def convert_jwk_to_rsa_key(jwk):
+    """
+    Convert a JWK (JSON Web Key) to an RSA public key
+    """
+    # Base64URL decode n and e
+    n = int.from_bytes(urlsafe_b64decode(jwk['n'] + '=='), 'big')  # Add padding for base64 decoding
+    e = int.from_bytes(urlsafe_b64decode(jwk['e'] + '=='), 'big')  # Add padding for base64 decoding
+    print(f"n: {n}")
+    print(f"e: {e}")
+    # nとeからRSA公開鍵を作成する
+    public_numbers = rsa.RSAPublicNumbers(e, n)
+    public_key = public_numbers.public_key(backend=default_backend())
+    
+    return public_key
+
+
+def validate_token(token):
+    try:
+        print("Token:", token)
+        header = jwt.get_unverified_header(token)
+        print("Token header:", header)
+        jwks_url = f"{AUTHORITY}/discovery/v2.0/keys"
+        jwks = requests.get(jwks_url).json()
+        rsa_key = None
+
+        for key in jwks["keys"]:
+            if key["kid"] == header["kid"]:
+                # JWKをRSA公開鍵に変換
+                rsa_key = convert_jwk_to_rsa_key(key)
+                break
+        
+        if rsa_key is None:
+            raise ValueError("Public key not found in JWKs")
+        print("RSA Key:", rsa_key)
+        print("RSA Key type:", type(rsa_key))
+        # アクセストークンの検証
+        payload = jwt.decode(
+            token,
+            rsa_key,
+            algorithms=["RS256"],
+            audience=[
+                # CLIENT_ID, # カスタムAPI用のクライアントID
+                "00000003-0000-0000-c000-000000000000" # Microsoft Graphのaud
+            ]
+            # options={"verify_signature": True, "verify_aud": True}
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        print('トークンの有効期限切れ')
+    except jwt.InvalidTokenError:
+        print('無効なトークン')
+    except Exception as e:
+        print(f"Token validation error: {e}")
+        return None
+
+@app.route("/userinfo", methods=["GET"])  
+def userinfo():
+    auth_header = request.headers.get("Authorization")  
+    if auth_header:  
+        token = auth_header.split(" ")[1]  
+        user_info = validate_token(token)  
+        if user_info:  
+            return jsonify(user_info)  
+    return jsonify({"error": "Invalid token"}), 401
 
 @app.route("/", defaults={"path": "index.html"})
 @app.route("/<path:path>")
@@ -155,14 +232,20 @@ def content_file(path):
 def chat():
     ensure_openai_token()
     approach = request.json["approach"]
-    user_name = get_user_name(request)
+    # user_name = get_user_name(request)
+    try:
+        user_name = request.json["loginUser"]
+    except Exception:
+        user_name = "anonymous"
     overrides = request.json.get("overrides")
-
+    conversationId = request.json.get("conversationId")
+    timestamp = request.json.get("timestamp")
+    conversation_title = request.json["conversation_title"]
     try:
         impl = chat_approaches.get(approach)
         if not impl:
             return jsonify({"error": "unknown approach"}), 400
-        r = impl.run(user_name, request.json["history"], overrides)
+        r = impl.run(user_name, request.json["history"], overrides, conversationId, timestamp, conversation_title)
         return jsonify(r)
     except Exception as e:
         write_error("chat", user_name, str(e))
@@ -173,14 +256,21 @@ def chat():
 def docsearch():
     ensure_openai_token()
     approach = request.json["approach"]
-    user_name = get_user_name(request)
+    # user_name = get_user_name(request)
+    try:
+        user_name = request.json["loginUser"]
+    except Exception:
+        user_name = "anonymous"
     overrides = request.json.get("overrides")
+    conversationId = request.json.get("conversationId")
+    timestamp = request.json.get("timestamp")
+    conversation_title = request.json["conversation_title"]
 
     try:
         impl = chat_approaches.get(approach)
         if not impl:
             return jsonify({"error": "unknown approach"}), 400
-        r = impl.run(user_name, request.json["history"], overrides)
+        r = impl.run(user_name, request.json["history"], overrides, conversationId, timestamp, conversation_title)
         return jsonify(r)
     except Exception as e:
         write_error("docsearch", user_name, str(e))
@@ -192,6 +282,147 @@ def ensure_openai_token():
         openai_token = azure_credential.get_token("https://cognitiveservices.azure.com/.default")
         openai.api_key = openai_token.token
     # openai.api_key = os.environ.get("AZURE_OPENAI_KEY")
+
+# get Conversation History
+@app.route("/", methods=["POST"])
+def get_conversation_history():
+    # ensure_openai_token()
+    # user_name = get_user_name(request)
+    try:
+        user_name = request.json["loginUser"]
+    except Exception:
+        user_name = "anonymous"
+    try:
+        # ユーザーの会話履歴をクエリ
+        conversation_data = select_user_conversations(user_name)
+        if conversation_data is None:
+            return jsonify(None)
+        else:
+            conversations = []
+            for conv in conversation_data:
+                # "messages" キーが存在するかどうか
+                if "conversation_id" in conv:
+                    conversation = {
+                        "conversation_id": conv["conversation_id"],
+                        "approach":conv["approach"],
+                        # "title": conv["messages"][0]["content"] if conv["messages"] else "No Title",
+                        "title": conv["conversation_title"] if "conversation_title" in conv and conv["conversation_title"] is not None else "No Title",
+                        "timestamp": conv["timestamp"]
+                    }
+                    conversations.append(conversation)
+            response_data = {
+                "user_id": user_name,
+                "conversations": conversations
+            }
+            return jsonify(response_data)
+    except Exception as e:
+        print(f"Error in get_conversation_history: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+# get Conversation Content
+@app.route("/conversationcontent", methods=["POST"])
+def get_conversation_content():
+    # ensure_openai_token()
+    # user_name = get_user_name(request)
+    conversation_id = request.json.get("conversation_id")
+    approach = request.json.get("approach")
+    content = {}
+    try:
+        # ユーザーの会話内容をクエリ
+        content_data = select_conversation_content(conversation_id, approach)
+        if content_data is None:
+            return jsonify(None)
+        # "messages" キーが存在するかどうか
+        if "messages" in content_data[0]:
+            content = {
+                "conversation_id": content_data[0]["conversation_id"],
+                "approach":content_data[0]["approach"],
+                "conversations":[
+                    {
+                        "role": msg["role"],
+                        "content": msg["content"]
+                    }
+                    for msg in content_data[0]["messages"]
+                ]
+            }
+            return jsonify(content)
+        else:
+            # "messages" キーがない、または空の場合
+            return jsonify(None)
+    except Exception as e:
+        print(f"Error in get_conversation_content: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+# get DocSearch Conversation Content
+@app.route("/conversationcontent/docsearch", methods=["POST"])
+def get_docsearch_conversation_content():
+    # ensure_openai_token()
+    # user_name = get_user_name(request)
+    conversation_id = request.json.get("conversation_id")
+    approach = request.json.get("approach")
+    content = {}
+    try:
+        # ユーザーの会話内容をクエリ
+        content_data = select_conversation_content(conversation_id, approach)
+        if content_data is None:
+            return jsonify(None)
+        # "messages" キーが存在するかどうか
+        if "messages" in content_data[0]:
+            content = {
+                "conversation_id": content_data[0]["conversation_id"],
+                "approach":content_data[0]["approach"],
+                "conversations":[
+                    {
+                        "role": msg["role"],
+                        "content": msg["content"]
+                    }
+                    for msg in content_data[0]["messages"]
+                ]
+            }
+            return jsonify(content)
+        else:
+            # "messages" キーがない、または空の場合
+            return jsonify(None)
+    except Exception as e:
+        print(f"Error in get_docsearch_conversation_content: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+def creat_title(input):
+    system_prompt_for_title = """Your assistant will come up with a title for your question.
+                Answer in the customer's language.
+                Titles should be easy to understand and no more than 20 characters.
+                Please use the words you have used as much as possible.
+                Don't end your sentences with a "?"."""
+    prompt = input
+    message_builder_for_title = MessageBuilder(system_prompt_for_title)
+    messages_for_title = message_builder_for_title.get_messages_from_history(
+        [], 
+        prompt
+        )
+    conversation_title = openai.ChatCompletion.create(
+        engine=AZURE_OPENAI_GPT_35_TURBO_DEPLOYMENT, 
+        messages=messages_for_title,
+        temperature=0.5, 
+        # max_tokens=max_tokens,
+        n=1)
+    title = conversation_title.choices[0]["message"]["content"]
+    return title
+
+# delete Conversation Content
+@app.route("/delete", methods=["POST"])
+def delete_conversation():
+    # ensure_openai_token()
+    # user_name = get_user_name(request)
+    conversation_id = request.json.get("conversation_id")
+    content = {}
+    try:
+        # ユーザーの会話内容をクエリ
+        isSuccess = delete_conversation_content(conversation_id)
+        content = {"success": isSuccess}
+        return jsonify(content)
+    except Exception as e:
+        print(f"Error in delete_conversation: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(port=5000, host='0.0.0.0')

@@ -15,7 +15,7 @@ const MultiLineBody = ( body: string ) => {
             </React.Fragment>
         );
     });
-    return <div>{texts}</div>;
+    return <span>{texts}</span>;
 };
 
 export const HowToUse = ({ text }: Props) => {
