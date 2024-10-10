@@ -1,18 +1,17 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Checkbox, Panel, DefaultButton, TextField, SpinButton } from "@fluentui/react";
 import { Dropdown, IDropdownOption } from "@fluentui/react/lib/Dropdown";
-import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
+import { useOutletContext, useLocation } from 'react-router-dom';
 
 import styles from "./DocSearch.module.css";
 import { UserConversations } from '../../api/models';
-import { searchdocApi, Approaches, ChatResponse, AskResponse, ChatRequest, ChatTurn, createJSTTimeStamp, getConversationsHistoryApi, getDocSearchConversationContentApi } from "../../api";
+import { searchdocApi, Approaches, AskResponse, ChatRequest, ChatTurn, createJSTTimeStamp, getConversationsHistoryApi, getDocSearchConversationContentApi } from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { HowToUseList } from "../../components/HowToUse";
 import { UserChatMessage } from "../../components/UserChatMessage";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 import { SettingsButton } from "../../components/SettingsButton";
-import { ClearChatButton } from "../../components/ClearChatButton";
 
 const DocSearch = () => {
     const { conversationId, onClearChat, conversationContent, updateReupdateResult, loginUser, handleConversationClick } = useOutletContext<{
@@ -189,10 +188,6 @@ const DocSearch = () => {
 
     const onExcludeCategoryChanged = (_ev?: React.FormEvent, newValue?: string) => {
         setExcludeCategory(newValue || "");
-    };
-
-    const onExampleClicked = (example: string) => {
-        makeApiRequest(example);
     };
 
     const onShowCitation = (citation: string, index: number) => {

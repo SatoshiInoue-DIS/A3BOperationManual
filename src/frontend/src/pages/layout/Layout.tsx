@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, Link, useNavigate  } from "react-router-dom";
-import { getConversationContentApi } from "../../api"; 
 import { useMsalAuth } from "../../auth/useMsalAuth";
 import { SideNav } from "../../components/SideNav";
 import styles from "./Layout.module.css";
@@ -18,10 +17,7 @@ const Layout = (): JSX.Element => {
     useEffect(() => {
         const savedConversationId = localStorage.getItem('selectedConversationId');  
         if (savedConversationId) {  
-            setConversationId(savedConversationId);  
-            (async () => {
-                // await fetchConversationContent(savedConversationId);  
-            })();
+            setConversationId(savedConversationId);
         } else {
             // 新しいIDを生成し、localStorageに保存
             const newId = uuidv4();
@@ -29,24 +25,6 @@ const Layout = (): JSX.Element => {
             setConversationId(newId);
         }
     }, []);
-
-    // const fetchConversationContent = async (id: string) => {  
-    //     try {  
-    //         const result = await getConversationContentApi(id, approach);  
-    //         const content: [user: string, response: ChatResponse | AskResponse][] = [];  
-    //         const messages = result.conversations;  
-    //         for (let i = 0; i < messages.length; i += 2) {  
-    //             const userMessage = messages[i];  
-    //             const assistantMessage = messages[i + 1];  
-    //             if (userMessage && assistantMessage && userMessage.role === 'user' && assistantMessage.role === 'assistant') {  
-    //                 content.push([userMessage.content, { answer: assistantMessage.content }] as [user: string, response: ChatResponse | AskResponse]);  
-    //             }  
-    //         }  
-    //         setConversationContent(content);  
-    //     } catch (error) {  
-    //         console.error('Error in fetchConversationContent:', error);  
-    //     }
-    // };
     
     const handleConversationClick = (id: string) => {
         if (id == "clearID") {
@@ -56,8 +34,7 @@ const Layout = (): JSX.Element => {
             setConversationId(newId); // 新しいIDで状態を更新
             setConversationContent([]);
         } else {
-            setConversationId(id);  
-            // fetchConversationContent(id);  
+            setConversationId(id);
             localStorage.setItem('selectedConversationId', id);
         }
     };

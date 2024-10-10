@@ -234,32 +234,6 @@ export const SideNav = ({ conversationId, onClick, clearChat, content, updateCon
 
     const [clickedConversationId, setClickedConversationId] = useState<string | null>(null);
 
-    // const makeApiRequestForConversationContent = async (conversation_id: string) => {
-    //     setClickedConversationId(conversation_id);
-    //     try {
-    //         const result = await getConersationContentApi(conversation_id)
-    //         const content: [user: string, response: ChatResponse | AskResponse][] = [];
-    //         const messages = result.conversations
-    //         // ユーザーとアシスタントの会話ペアを抽出
-    //         for (let i = 0; i < messages.length; i += 2) {
-    //             const userMessage = messages[i];
-    //             const assistantMessage = messages[i + 1];
-    //             if (userMessage && assistantMessage && userMessage.role === 'user' && assistantMessage.role === 'assistant') {
-    //                 // contentにペアを追加
-    //                 content.push([
-    //                     userMessage.content,  // ユーザーのメッセージ内容
-    //                     { answer: assistantMessage.content } // アシスタントの回答 (ChatResponse型)
-    //                 ] as [user: string, response: ChatResponse | AskResponse]);
-    //             }
-    //         }
-    //         updateConversationContent(content);
-    //         onClick(conversation_id);  
-    //         localStorage.setItem('selectedConversationId', conversation_id);  // ローカルストレージに保存
-    //     } catch (error) {
-    //         console.error('Error in makeApiRequestForConversationContent:', error);
-    //     }
-    // }
-
     useEffect(() => {
         if (reupdateResult) {
             setConversationsData(reupdateResult);
@@ -390,7 +364,6 @@ export const SideNav = ({ conversationId, onClick, clearChat, content, updateCon
             if (conversationsData && conversationsData.conversations) {
                 // conversations配列の中で指定されたconversation_idと一致するものを探す
                 const conversation = conversationsData.conversations.find(conv => conv.conversation_id === conversationId);
-                
                 // 一致する会話があればそのtitleを返す
                 if (conversation) {
                     return conversation.title;

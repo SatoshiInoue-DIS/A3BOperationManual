@@ -232,7 +232,6 @@ def content_file(path):
 def chat():
     ensure_openai_token()
     approach = request.json["approach"]
-    # user_name = get_user_name(request)
     try:
         user_name = request.json["loginUser"]
     except Exception:
@@ -256,7 +255,6 @@ def chat():
 def docsearch():
     ensure_openai_token()
     approach = request.json["approach"]
-    # user_name = get_user_name(request)
     try:
         user_name = request.json["loginUser"]
     except Exception:
@@ -281,13 +279,10 @@ def ensure_openai_token():
     if openai_token.expires_on < int(time.time()) - 60:
         openai_token = azure_credential.get_token("https://cognitiveservices.azure.com/.default")
         openai.api_key = openai_token.token
-    # openai.api_key = os.environ.get("AZURE_OPENAI_KEY")
 
 # get Conversation History
 @app.route("/", methods=["POST"])
 def get_conversation_history():
-    # ensure_openai_token()
-    # user_name = get_user_name(request)
     try:
         user_name = request.json["loginUser"]
     except Exception:
@@ -305,7 +300,6 @@ def get_conversation_history():
                     conversation = {
                         "conversation_id": conv["conversation_id"],
                         "approach":conv["approach"],
-                        # "title": conv["messages"][0]["content"] if conv["messages"] else "No Title",
                         "title": conv["conversation_title"] if "conversation_title" in conv and conv["conversation_title"] is not None else "No Title",
                         "timestamp": conv["timestamp"]
                     }
@@ -322,8 +316,6 @@ def get_conversation_history():
 # get Conversation Content
 @app.route("/conversationcontent", methods=["POST"])
 def get_conversation_content():
-    # ensure_openai_token()
-    # user_name = get_user_name(request)
     conversation_id = request.json.get("conversation_id")
     approach = request.json.get("approach")
     content = {}
@@ -356,8 +348,6 @@ def get_conversation_content():
 # get DocSearch Conversation Content
 @app.route("/conversationcontent/docsearch", methods=["POST"])
 def get_docsearch_conversation_content():
-    # ensure_openai_token()
-    # user_name = get_user_name(request)
     conversation_id = request.json.get("conversation_id")
     approach = request.json.get("approach")
     content = {}
@@ -403,7 +393,6 @@ def creat_title(input):
         engine=AZURE_OPENAI_GPT_35_TURBO_DEPLOYMENT, 
         messages=messages_for_title,
         temperature=0.5, 
-        # max_tokens=max_tokens,
         n=1)
     title = conversation_title.choices[0]["message"]["content"]
     return title
@@ -411,8 +400,6 @@ def creat_title(input):
 # delete Conversation Content
 @app.route("/delete", methods=["POST"])
 def delete_conversation():
-    # ensure_openai_token()
-    # user_name = get_user_name(request)
     conversation_id = request.json.get("conversation_id")
     content = {}
     try:

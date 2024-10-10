@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { TextField, Panel, DefaultButton } from "@fluentui/react";
 import { Dropdown, IDropdownOption } from "@fluentui/react/lib/Dropdown";
-import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
+import { useOutletContext, useLocation } from 'react-router-dom';
 
 import styles from "./Chat.module.css";
 import { UserConversations } from '../../api/models';

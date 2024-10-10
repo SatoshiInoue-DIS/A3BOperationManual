@@ -11,9 +11,7 @@ export const useMsalAuth = () => {
         const initializeMsal = async () => {
             try {
                 await msalInstance.initialize();
-                // console.log("MSAL initialization success");
             } catch (error) {
-                // console.error("MSAL initialization error:", error);
             }
         };
         const handleLogin = async () => {
@@ -24,21 +22,8 @@ export const useMsalAuth = () => {
                 const loginResponse = await msalInstance.handleRedirectPromise();
 
                 if (loginResponse) {
-                    // console.log("Token acquired successfully", loginResponse);
-                    // console.log("アカウント名", loginResponse.account.name);
                     const acconutName = loginResponse.account.name
                     // 2. アクセストークンを使用して、ユーザー情報を取得するなどの処理を行う
-                    // const accessToken = loginResponse.accessToken;
-                    // console.log("Access Token:", accessToken);
-                    // const response = await fetch("/userinfo", {
-                    //     method: "GET",
-                    //     headers: {
-                    //         Authorization: `Bearer ${accessToken}`,
-                    //     },
-                    // });
-
-                    // const userInfo = await response.json();
-                    // setLoginUser(userInfo.preferred_username || "anonymous");
                     setLoginUser(acconutName || "anonymous");
                     if (window.location.pathname === "/docsearch") {
                         // ログイン成功後に /docsearch へ戻る
@@ -48,7 +33,6 @@ export const useMsalAuth = () => {
                         navigate("/", { replace: true });
                     }
                 } else {
-                    // console.log("loginResponse is null", loginResponse);
                     // トークンがない場合はログインを開始する
                     await msalInstance.loginRedirect({
                         scopes: [
@@ -57,7 +41,6 @@ export const useMsalAuth = () => {
                     });
                 }
             } catch (error) {
-                // console.error("Error during login:", error);
                 setLoginUser("anonymous");
             }
         };

@@ -20,12 +20,6 @@ export const AnswerChat = ({ answer, isSelected }: Props) => {
 
     return (
         <Stack className={`${styles.answerContainer} ${isSelected && styles.selected}`} verticalAlign="space-between">
-            {/* <Stack.Item>
-                <Stack horizontal horizontalAlign="space-between">
-                    <AnswerIcon />
-                </Stack>
-            </Stack.Item> */}
-
             <Stack.Item grow>
                 <div className={styles.answerText}>
                     <ReactMarkdown children={parsedAnswer.answerHtml} components={{code: CodeBlock,}} />

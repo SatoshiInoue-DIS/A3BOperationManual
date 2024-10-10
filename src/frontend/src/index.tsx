@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, useNavigate, useOutletContext } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { initializeIcons } from "@fluentui/react";
 
 import "./index.css";
