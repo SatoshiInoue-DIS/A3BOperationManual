@@ -189,11 +189,50 @@
     width: 40px;
     height: 40px;
     cursor : pointer;
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
 }
 
 .NewChatBtnContainer:hover {
     background-color: #e4e3df;
     border-radius: 5px;
+}
+
+.NewChatexplanation {
+    display: none;
+    position: absolute;
+    padding: 10px;
+    font-size: 12px;
+    line-height: 1.6em;
+    color: #fff;
+    border-radius: 10px;
+    background: #5d78b3;
+    width: 130px;
+    text-align: center;
+}
+
+.NewChatexplanation:before {
+    content: "";
+    position: absolute;
+    top: -24px;
+    right: 36%;
+    border: 15px solid transparent;
+    border-top: 15px solid #5d78b3;
+    margin-left: -15px;
+    transform: rotateZ(180deg);
+}
+
+.NewChatexplanation p{
+    margin:0;
+    padding:0;
+    font-size: 14px;
+}
+
+.NewChatBtnContainer:hover .NewChatexplanation{
+    display: inline-block;
+    top: 55px;
+    left: -49px;
 }
 
 .DelModalContainer {
