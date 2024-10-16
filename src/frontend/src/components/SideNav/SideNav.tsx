@@ -232,8 +232,6 @@ export const SideNav = ({ conversationId, onClick, clearChat, content, updateCon
         clearChat();
     }
 
-    const [clickedConversationId, setClickedConversationId] = useState<string | null>(null);
-
     useEffect(() => {
         if (reupdateResult) {
             setConversationsData(reupdateResult);
@@ -403,6 +401,9 @@ export const SideNav = ({ conversationId, onClick, clearChat, content, updateCon
                                 <div onClick={() => creatNewChat("clearID")}>
                                     <img src="./new_chat.png" width={30} height={30} alt="new_chat" />
                                 </div>
+                                <div className={styles.NewChatexplanation}>
+                                    <p>新しいチャット</p>
+                                </div>
                             </div>
                         </div>
                         <div ref={yourComponentRef} className={styles.SideNavList}>
@@ -419,7 +420,7 @@ export const SideNav = ({ conversationId, onClick, clearChat, content, updateCon
                                         {conversations.map((conversation, convIndex) => (
                                             <li
                                                 key={convIndex}
-                                                className={`${styles.HistoryTitleContainer} ${clickedConversationId === conversation.conversation_id || selectedConversationId === conversation.conversation_id ? styles.clicked : ""}`}
+                                                className={`${styles.HistoryTitleContainer} ${conversationId === conversation.conversation_id || selectedConversationId === conversation.conversation_id ? styles.clicked : ""}`}
                                                 onClick={() => handleConversationClick(conversation.conversation_id, conversation.approach)}
                                             >
                                                 <a>

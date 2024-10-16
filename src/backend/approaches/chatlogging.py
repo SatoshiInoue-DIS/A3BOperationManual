@@ -26,6 +26,8 @@ credential = DefaultAzureCredential()
 database = CosmosClient(endpoint, credential).get_database_client(database_name)
 container = database.get_container_client(container_name)
 
+A3B_FAQ_BOT_NAME = os.environ.get("A3B_FAQ_BOT_NAME")
+
 logger = logging.getLogger(__name__)
 logger.addHandler(AzureLogHandler(connection_string=os.environ.get("APPLICATIONINSIGHTS_CONNECTION_STRING")))
 console_handler = logging.StreamHandler()
@@ -117,6 +119,7 @@ def write_chatlog(approach: ApproachType, user_name: str, total_tokens: int, inp
             "conversation_id" : conversationId,
             "timestamp" : timestamp,
             "conversation_title": title,
+            "bot_name": A3B_FAQ_BOT_NAME,
             "messages" : [
                 {
                     "role" : "user",
@@ -141,6 +144,7 @@ def write_error(category: str, user_name: str, error: str):
     properties = {
         "category" : category, # "chat", "docsearch", "content"
         "user" : user_name,
+        "bot_name" : A3B_FAQ_BOT_NAME,
         "error" : error
     }
 
@@ -154,8 +158,15 @@ def select_user_conversations(user_name: str):
             SELECT c.approach, c.user, c.tokens, c.conversation_id, c.timestamp, c.conversation_title
             FROM c
             WHERE c.user = @user
+            AND c.bot_name = @bot_name
         """
-        parameters = [{"name": "@user", "value": user_name}]
+        parameters = [
+            {
+                "name": "@user", "value": user_name
+            }, {
+                "name": "@bot_name", "value": A3B_FAQ_BOT_NAME
+            }
+        ]
         items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
         return items
     except Exception as e:  
@@ -169,12 +180,15 @@ def select_conversation_content(conversation_id: str, approach: str):
             FROM c
             WHERE c.conversation_id = @conversation_id
             AND c.approach = @approach
+            AND c.bot_name = @bot_name
         """
         parameters = [
             {
                 "name": "@conversation_id", "value": conversation_id
             }, {
                 "name": "@approach", "value": approach
+            }, {
+                "name": "@bot_name", "value": A3B_FAQ_BOT_NAME
             }
         ]
         items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
@@ -189,8 +203,15 @@ def delete_conversation_content(conversation_id: str):
             SELECT *
             FROM c
             WHERE c.conversation_id = @conversation_id
+            AND c.bot_name = @bot_name
         """
-        parameters = [{"name": "@conversation_id", "value": conversation_id}]
+        parameters = [
+            {
+                "name": "@conversation_id", "value": conversation_id
+            }, {
+                "name": "@bot_name", "value": A3B_FAQ_BOT_NAME
+            }
+        ]
         items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
         if not items:
             print(f"No items found for conversation_id: {conversation_id}")
