@@ -12,13 +12,13 @@ export function parseAnswerToHtml(answer: string, onCitationClicked: (citationFi
     const citations: string[] = [];
     const followupQuestions: string[] = [];
 
-    // Extract any follow-up questions that might be in the answer
+    // 回答に含まれる可能性のあるフォローアップの質問を抽出する
     let parsedAnswer = answer.replace(/<<([^>>]+)>>/g, (match, content) => {
         followupQuestions.push(content);
-        return "";
+        return ""; // 回答からフォローアップの質問を削除する
     });
 
-    // trim any whitespace from the end of the answer after removing follow-up questions
+    // フォローアップの質問を削除した後、回答の末尾の空白を削除します。
     parsedAnswer = parsedAnswer.trim();
 
     const parts = parsedAnswer.split(/\[([^\]]+)\]/g);
@@ -28,7 +28,7 @@ export function parseAnswerToHtml(answer: string, onCitationClicked: (citationFi
         part = parts[parts.length - 1];
 
         if (index % 2 === 0) {
-            return part;
+            return part; // 偶数インデックス：通常のテキスト
         } else {
             let citationIndex: number;
             if (citations.indexOf(part) !== -1) {
@@ -38,10 +38,10 @@ export function parseAnswerToHtml(answer: string, onCitationClicked: (citationFi
                 citationIndex = citations.length;
             }
 
-            const path = getCitationFilePath(part);
+            const path = getCitationFilePath(part); // 引用ファイルパスの取得
 
             return renderToStaticMarkup(
-                <a className="supContainer" title={part} onClick={() => onCitationClicked(path)}>
+                <a className="supContainer" title={part} onClick={() => onCitationClicked(path)} href="#">
                     <sup>{citationIndex}</sup>
                 </a>
             );
@@ -49,7 +49,7 @@ export function parseAnswerToHtml(answer: string, onCitationClicked: (citationFi
     });
 
     return {
-        answerHtml: fragments.join(""),
+        answerHtml: fragments.join(""), // すべてのフラグメントを結合して最終的なHTMLを形成する
         citations,
         followupQuestions
     };
@@ -61,7 +61,7 @@ type HtmlChatParsedAnswer = {
 };
 
 export function parseChatAnswerToHtml(answer: string): HtmlChatParsedAnswer {
-    // trim any whitespace from the end of the answer after removing follow-up questions
+    // フォローアップの質問を削除した後、回答の末尾の空白を削除します。
     const parsedAnswer = answer.trim();
 
     const parts = parsedAnswer.split(/\[([^\]]+)\]/g);

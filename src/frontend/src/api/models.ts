@@ -25,8 +25,8 @@ export type AskRequest = {
 
 export type AskResponse = {
     answer: string;
-    thoughts: string | null;
-    data_points: string[];
+    thoughts?: string | null;
+    data_points?: string[];
     error?: string;
 };
 

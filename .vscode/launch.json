@@ -12,7 +12,10 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "envFile": "${workspaceFolder}/.azure/OperationManual/.env",
-            "stopOnEntry":true
+            "stopOnEntry":true,
+            "subProcess": true,
+            "python": "${workspaceFolder}/src/backend/backend_env/scripts/python.exe"
+            // "python":"C:/Users/sinou/AppData/Local/Programs/Python/Python311/python.exe"
         }
     ]
 }

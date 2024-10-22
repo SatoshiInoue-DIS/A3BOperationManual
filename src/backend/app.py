@@ -4,7 +4,7 @@ import mimetypes
 import urllib.parse
 import jwt
 import requests 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
@@ -238,10 +238,7 @@ def content_file(path):
 def chat():
     ensure_openai_token()
     approach = request.json["approach"]
-    try:
-        user_name = request.json["loginUser"]
-    except Exception:
-        user_name = "anonymous"
+    user_name = request.json.get("loginUser", "anonymous")
     overrides = request.json.get("overrides")
     conversationId = request.json.get("conversationId")
     timestamp = request.json.get("timestamp")
@@ -250,8 +247,8 @@ def chat():
         impl = chat_approaches.get(approach)
         if not impl:
             return jsonify({"error": "unknown approach"}), 400
-        r = impl.run(user_name, request.json["history"], overrides, conversationId, timestamp, conversation_title)
-        return jsonify(r)
+        r = Response(impl.run(user_name, request.json["history"], overrides, conversationId, timestamp, conversation_title), content_type='text/event-stream')
+        return r
     except Exception as e:
         write_error("chat", user_name, str(e))
         return jsonify({"error": str(e)}), 500
@@ -261,10 +258,7 @@ def chat():
 def docsearch():
     ensure_openai_token()
     approach = request.json["approach"]
-    try:
-        user_name = request.json["loginUser"]
-    except Exception:
-        user_name = "anonymous"
+    user_name = request.json.get("loginUser", "anonymous")
     overrides = request.json.get("overrides")
     conversationId = request.json.get("conversationId")
     timestamp = request.json.get("timestamp")
@@ -274,8 +268,8 @@ def docsearch():
         impl = chat_approaches.get(approach)
         if not impl:
             return jsonify({"error": "unknown approach"}), 400
-        r = impl.run(user_name, request.json["history"], overrides, conversationId, timestamp, conversation_title)
-        return jsonify(r)
+        r = Response(impl.run(user_name, request.json["history"], overrides, conversationId, timestamp, conversation_title), content_type='text/event-stream')
+        return r
     except Exception as e:
         write_error("docsearch", user_name, str(e))
         return jsonify({"error": str(e)}), 500
@@ -289,10 +283,7 @@ def ensure_openai_token():
 # get Conversation History
 @app.route("/", methods=["POST"])
 def get_conversation_history():
-    try:
-        user_name = request.json["loginUser"]
-    except Exception:
-        user_name = "anonymous"
+    user_name = request.json.get("loginUser", "anonymous")
     try:
         # ユーザーの会話履歴をクエリ
         conversation_data = select_user_conversations(user_name)

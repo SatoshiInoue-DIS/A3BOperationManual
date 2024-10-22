@@ -8,10 +8,12 @@ from approaches.approach import Approach
 from approaches.chatlogging import write_chatlog, ApproachType
 from core.messagebuilder import MessageBuilder
 from core.modelhelper import get_gpt_model, get_max_token_from_messages
+import tiktoken
+import json
 
-# Simple retrieve-then-read implementation, using the Cognitive Search and OpenAI APIs directly. It first retrieves
-# top documents from search, then constructs a prompt with them, and then uses OpenAI to generate an completion 
-# (answer) with that prompt.
+# Cognitive Search と OpenAI API を直接使用する、取得してから読み取るシンプルな実装。
+# まず検索から上位のドキュメントを取得し、それらを使用してプロンプトを作成し、
+# 次に OpenAI を使用してそのプロンプトで補完 (回答) を生成します。
 class ChatReadRetrieveReadApproach(Approach):
     # Chat roles
     SYSTEM = "system"
@@ -25,7 +27,7 @@ class ChatReadRetrieveReadApproach(Approach):
     """
     system_message_chat_conversation = """Assistant helps the customer questions. keep your answers concise and in Japanese.
 Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
-For tabular information return it as an html table. Do not return markdown format. 
+For tabular information, return it as Markdown, not HTML. 
 If a word with multiple meanings is used, ask which meaning the word should be, if necessary.
 If you have other suggestions or options that are not included in the information sources below, please use the phrase "in the following information sources."
 Each source has a name followed by colon and the actual information, always include the source name for each fact you use in the response. Use square brackets to reference the source, e.g. [info1.txt]. Don't combine sources, list each source separately, e.g. [info1.txt][info2.pdf].
@@ -58,7 +60,6 @@ source quesion: {user_question}
         chat_gpt_model = get_gpt_model(chat_model)
         chat_deployment = chat_gpt_model.get("deployment")
 
-        # STEP 1: Generate an optimized keyword search query based on the chat history and the last question
         # ステップ 1: チャット履歴と最後の質問に基づいて、最適化されたキーワード検索クエリを生成します
         user_q = 'Generate search query for: ' + history[-1]["user"]
         query_prompt = self.query_prompt_template.format(user_question=history[-1]["user"])
@@ -71,7 +72,6 @@ source quesion: {user_question}
 
         max_tokens =  get_max_token_from_messages(messages, chat_model)
 
-        # Change create type ChatCompletion.create → ChatCompletion.acreate when enabling asynchronous support.
         # クエリ生成
         chat_completion = openai.ChatCompletion.create(
             engine=chat_deployment, 
@@ -82,14 +82,13 @@ source quesion: {user_question}
         # クエリ取り出し
         query_text = chat_completion.choices[0].message.content
         if query_text.strip() == "0":
-            query_text = history[-1]["user"] # Use the last user input if we failed to generate a better query
+            query_text = history[-1]["user"] # より良いクエリを生成できなかった場合は、最後のユーザー入力を使用します
 
         total_tokens = chat_completion.usage.total_tokens
 
         # 質問文のベクトルを算出
         query_vector = generate_embeddings(history[-1]["user"]) # ベクトルクエリ
 
-        # STEP 2: Retrieve relevant documents from the search index with the GPT optimized query
         # ステップ 2: GPT 最適化クエリを使用して検索インデックスから関連ドキュメントを取得する
         use_semantic_captions = True if overrides.get("semanticCaptions") else False
         top = overrides.get("top")
@@ -127,14 +126,8 @@ source quesion: {user_question}
             results = [doc[self.sourcepage_field] + ": " + nonewlines(doc[self.content_field]) for doc in r]
         content = "\n".join(results)
 
-        # STEP 3: Generate a contextual and content specific answer using the search results and chat history
-        # GPT-3.5 Turbo (4k/16k)
-        if "gpt-3.5-turbo" in chat_model:
-            completion_model = chat_model
-            # completion_model = "gpt-35-turbo-instruct" # for future use
-        # GPT-4 (8k/32k)
-        else:
-            completion_model = chat_model
+        # STEP 3: 検索結果とチャット履歴を使用して、コンテキストとコンテンツに応じた回答を生成します。
+        completion_model = chat_model
 
         completion_gpt_model = get_gpt_model(completion_model)
         completion_deployment = completion_gpt_model.get("deployment")
@@ -142,31 +135,47 @@ source quesion: {user_question}
         message_builder = MessageBuilder(self.system_message_chat_conversation)
         messages = message_builder.get_messages_from_history_for_answer(
             history,
-            history[-1]["user"]+ "\n\nSources:\n" + content[:1024], # Model does not handle lengthy system messages well. Moving sources to latest user conversation to solve follow up questions prompt.
+            history[-1]["user"]+ "\n\nSources:\n" + content[:1024], # モデルは長いシステム メッセージを適切に処理しません。ソースを最新のユーザー会話に移動して、フォローアップの質問プロンプトを解決します。
             )
 
         temaperature = float(overrides.get("temperature"))
         max_tokens = get_max_token_from_messages(messages, completion_model)
 
-        # Change create type ChatCompletion.create → ChatCompletion.acreate when enabling asynchronous support.
         # 回答生成
         response = openai.ChatCompletion.create(
             engine=completion_deployment, 
             messages=messages,
             temperature=temaperature, 
             max_tokens=1024,
-            n=1)
-        conversation_title = title
-        response_text = response.choices[0]["message"]["content"]
-        total_tokens += response.usage.total_tokens
+            n=1,
+            stream=True
+        )
+        # 返答を受け取り、逐次yield
+        response_text = ""
+        for chunk in response:
+            if chunk:
+                content = chunk['choices'][0]['delta'].get('content')
+                if content:
+                    response_text += content
+                    yield content # 各チャンクをフロントに送信
 
+        # トークン数を推定（レスポンスの文字数から算出しているだけあまり意味はない）
+        # 新しいバージョンのopenaiならストリームでも最後にトークン数を出してくれるみたい
+        encoding_name = tiktoken.encoding_for_model(chat_model).name
+        encoding = tiktoken.get_encoding(encoding_name)
+        total_tokens = len(encoding.encode(response_text))
         # logging
         # Azure Cosmos DBのコンテナーにプロンプトを登録
         input_text = history[-1]["user"]
-        write_chatlog(ApproachType.DocSearch, user_name, total_tokens, input_text, response_text, conversationId, timestamp, conversation_title, query_text)
-        
-        # 思考プロセス
+        write_chatlog(ApproachType.DocSearch, user_name, total_tokens, input_text, response_text, conversationId, timestamp, title, query_text)
         msg_to_display = '\n\n'.join([str(message) for message in messages])
+        # マークダウン形式の水平線を入れ込む
+        response_text += "***"
+        yield json.dumps({
+            "data_points": results,  # 検索結果など
+            "answer": response_text,  # 最終的な応答
+            "thoughts": f"Searched for:<br>{query_text}<br><br>Conversations:<br>" + msg_to_display.replace('\n', '<br>')
+        })
 
-        return {"data_points": results, "answer": response_text, "thoughts": f"Searched for:<br>{query_text}<br><br>Conversations:<br>" + msg_to_display.replace('\n', '<br>')}
+        yield "\n[END OF RESPONSE]"
 

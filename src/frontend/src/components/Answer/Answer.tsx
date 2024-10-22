@@ -5,7 +5,11 @@ import DOMPurify from "dompurify";
 import styles from "./Answer.module.css";
 
 import { AskResponse, getCitationFilePath } from "../../api";
-import { parseAnswerToHtml } from "./AnswerParser";
+import { parseAnswerToHtml, parseChatAnswerToHtml } from "./AnswerParser";
+import ReactMarkdown from 'react-markdown'
+import CodeBlock from "../CodeBlock";
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 interface Props {
     answer: AskResponse;
@@ -18,15 +22,30 @@ export const Answer = ({
     isSelected,
     onCitationClicked,
 }: Props) => {
+    // parseAnswerToHtml関数で返されるparsedAnswerがHTMLとマークダウンを含む
     const parsedAnswer = useMemo(() => parseAnswerToHtml(answer.answer, onCitationClicked), [answer]);
-
+    const parsedAnswer2 = useMemo(() => parseChatAnswerToHtml(answer.answer), [answer]);
+    // DOMPurifyを使ってHTMLをサニタイズ
     const sanitizedAnswerHtml = DOMPurify.sanitize(parsedAnswer.answerHtml);
 
     return (
         <Stack className={`${styles.answerContainer} ${isSelected && styles.selected}`} verticalAlign="space-between">
             <Stack.Item grow>
                 <div className={styles.answerText}>
-                    <div className={styles.answerText} dangerouslySetInnerHTML={{ __html: sanitizedAnswerHtml }}></div>
+                    <ReactMarkdown
+                        children={parsedAnswer.answerHtml} 
+                        components={{ code: CodeBlock }} // マークダウンのcode部分を処理
+                        rehypePlugins={[rehypeRaw]}
+                        remarkPlugins={[remarkGfm]}
+                        remarkRehypeOptions={{ passThrough: ['link'] }}
+                    />
+                    {/* <ReactMarkdown
+                        children={sanitizedAnswerHtml} 
+                        components={{ code: CodeBlock }} // マークダウンのcode部分を処理
+                    />
+                    
+                    <ReactMarkdown children={parsedAnswer.answerHtml} components={{code: CodeBlock}} />
+                    <ReactMarkdown children={parsedAnswer2.answerHtml} components={{code: CodeBlock,}} /> */}
                 </div>
             </Stack.Item>
             {!!parsedAnswer.citations.length && (

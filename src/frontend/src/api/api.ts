@@ -21,7 +21,7 @@ export async function askApi(options: AskRequest): Promise<AskResponse> {
     return parsedResponse;
 }
 
-export async function searchdocApi(options: ChatRequest): Promise<AskResponse> {
+export async function searchdocApi(options: ChatRequest, onStreamUpdate: (content: string) => void): Promise<AskResponse> {
     const response = await fetch("/docsearch", {
         method: "POST",
         headers: {
@@ -38,15 +38,43 @@ export async function searchdocApi(options: ChatRequest): Promise<AskResponse> {
         })
     });
 
-    const parsedResponse: AskResponse = await response.json();
+    // レスポンスが正しくない場合はエラーを投げる
     if (response.status > 299 || !response.ok) {
-        throw Error(parsedResponse.error || "Unknown error");
+        const errorResponse = await response.json();
+        throw Error(errorResponse.error || "Unknown error");
     }
+    // レスポンスのボディがnullでないことを確認
+    if (!response.body) {
+        throw new Error("レスポンスのボディがありません。");
+    }
+    // ストリームされたデータを処理
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let result = '';
 
-    return parsedResponse;
+    while (true) {
+        const { done, value } = await reader.read();
+        // ストリームが閉じられると処理を抜ける
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        // ストリーミング終了マーカーの検知
+        if (chunk.includes("\n[END OF RESPONSE]")) {
+            // ストリームの終了を検知したら特別な処理を行う
+            onStreamUpdate("\n[END OF RESPONSE]");
+            break;
+        }
+        // 受信したデータをhandleStreamUpdateに渡す
+        // 通常の応答は逐次表示
+        onStreamUpdate(chunk);
+        result += chunk;
+    }
+    const parsedResponse: string = await JSON.stringify({answer: result});
+    // 最終的な結果をJSON形式で解析
+    return JSON.parse(parsedResponse);
 }
 
-export async function chatApi(options: GptChatRequest): Promise<ChatResponse> {
+export async function chatApi(options: GptChatRequest, onStreamUpdate: (content: string) => void): Promise<ChatResponse> {
     const response = await fetch("/chat", {
         method: "POST",
         headers: {
@@ -63,12 +91,39 @@ export async function chatApi(options: GptChatRequest): Promise<ChatResponse> {
         })
     });
 
-    const parsedResponse: AskResponse = await response.json();
+    // レスポンスが正しくない場合はエラーを投げる
     if (response.status > 299 || !response.ok) {
-        throw Error(parsedResponse.error || "Unknown error");
+        const errorResponse = await response.json();
+        throw Error(errorResponse.error || "Unknown error");
     }
-
-    return parsedResponse;
+    // レスポンスのボディがnullでないことを確認
+    if (!response.body) {
+        throw new Error("レスポンスのボディがありません。");
+    }
+    // ストリームされたデータを処理
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let result = '';
+    
+    while (true) {
+        const { done, value } = await reader.read();
+        // ストリームが閉じられると処理を抜ける
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        // ストリーミング終了マーカーの検知
+        if (chunk.includes("\n[END OF RESPONSE]")) {
+            // ストリームの終了を検知したら特別な処理を行う
+            onStreamUpdate("\n[END OF RESPONSE]");
+            break;
+        }
+        // 受信したデータをhandleStreamUpdateに渡す
+        onStreamUpdate(chunk);
+        result += chunk;
+    }
+    const parsedResponse: string = await JSON.stringify({answer: result});
+    // 最終的な結果をJSON形式で解析
+    return JSON.parse(parsedResponse);
 }
 
 export function getCitationFilePath(citation: string): string {

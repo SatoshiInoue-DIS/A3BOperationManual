@@ -91,6 +91,17 @@ const Chat = () => {
         setTimestamp(null);
     }, [conversationId]);
 
+    const [streamResponse, setStreamResponse] = useState<string>("");  // 途中の応答を保持
+
+    // ストリームから部分的な応答を受け取り、蓄積
+    const handleStreamUpdate = (chunk: string) => {
+        if (chunk === "\n[END OF RESPONSE]") {
+            return;
+        }
+        // 通常のレスポンス処理
+        setStreamResponse(prev => prev + chunk);
+    };
+
     const makeApiRequest = async (question: string) => {
         // 初回のリクエスト時にtimestampを設定
         let japanTimeStamp = timestamp === null ? createJSTTimeStamp() : timestamp;
@@ -100,6 +111,7 @@ const Chat = () => {
         setIsLoading(true);
 
         try {
+            setStreamResponse("");  // 新しいリクエストのためにリセット
             const history: GptChatTurn[] = answers.map(a => ({ user: a[0], assistant: a[1].answer }));
             const request: GptChatRequest = {
                 history: [...history, { user: question, assistant: undefined }],
@@ -114,8 +126,13 @@ const Chat = () => {
                 conversation_title: conversationTitle,
                 loginUser: loginUser,
             };
-            const result = await chatApi(request);
-            setAnswers([...answers, [question, result]]);
+            // ストリーミングの途中の更新を受け取りつつ、最終結果も得る
+            const result = await chatApi(request, handleStreamUpdate);
+            // 最終的な応答をanswersに追加
+            setAnswers(prevAnswers => [
+                ...prevAnswers,
+                [question, result] // 最終結果を利用
+            ]);
         } catch (e) {
             setError(e);
         } finally {
@@ -145,7 +162,7 @@ const Chat = () => {
 
     useEffect(() => {
         chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" })
-    }, [answers, isLoading]);
+    }, [answers, isLoading, streamResponse]);
 
     const onGptModelChange = (_ev?: React.FormEvent<HTMLDivElement>, option?: IDropdownOption) => {
         if (option !== undefined) {
@@ -194,7 +211,7 @@ const Chat = () => {
                                     <div className={styles.botThumbnailContainer}>
                                         <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
                                     </div>
-                                    <AnswerLoading />
+                                    <AnswerLoading streamResponse={streamResponse}/>
                                 </div>
                             </>
                         )}
