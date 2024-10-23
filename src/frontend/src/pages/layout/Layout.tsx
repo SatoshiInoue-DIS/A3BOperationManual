@@ -7,7 +7,8 @@ import { ChatResponse, UserConversations, AskResponse } from '../../api/models';
 import { v4 as uuidv4 } from 'uuid';
 
 const Layout = (): JSX.Element => {
-    const loginUser:string | null = useMsalAuth();
+    const loginUser: Promise<string | null> = useMsalAuth();
+    const [userName, setUserName] = useState<string | null>(null);
     const [conversationId, setConversationId] = useState<string | null>(null);  
     const [clearChatFunc, setClearChatFunc] = useState<() => void>(() => {});
     const [conversationContent, setConversationContent] = useState<[user: string, response: ChatResponse | AskResponse][]>([]);
@@ -15,16 +16,23 @@ const Layout = (): JSX.Element => {
     const [approach, setApproach] = useState<string>("chat");
     
     useEffect(() => {
-        const savedConversationId = localStorage.getItem('selectedConversationId');  
-        if (savedConversationId) {  
-            setConversationId(savedConversationId);
-        } else {
-            // 新しいIDを生成し、localStorageに保存
-            const newId = uuidv4();
-            localStorage.setItem(`selectedConversationId`, newId);
-            setConversationId(newId);
+        const fetchLoginUser = async () => {
+            const result = await loginUser; // Promiseの結果を待つ
+            if (result) {
+                setUserName(result)
+                const savedConversationId = localStorage.getItem('selectedConversationId');  
+                if (savedConversationId) {  
+                    setConversationId(savedConversationId);
+                } else {
+                    // 新しいIDを生成し、localStorageに保存
+                    const newId = uuidv4();
+                    localStorage.setItem(`selectedConversationId`, newId);
+                    setConversationId(newId);
+                }
+            }
         }
-    }, []);
+        fetchLoginUser(); // 非同期処理を呼び出し
+    }, [loginUser]);
     
     const handleConversationClick = (id: string) => {
         if (id == "clearID") {
@@ -72,7 +80,7 @@ const Layout = (): JSX.Element => {
                             </li>
                         </ul>
                     </nav>
-                    <h3 className={styles.headerTitleRight}>{loginUser}</h3>
+                    <h3 className={styles.headerTitleRight}>{userName}</h3>
                 </div>
             </header>
 
@@ -84,7 +92,7 @@ const Layout = (): JSX.Element => {
                     content={conversationContent}
                     updateConversationContent={updateConversationContent}
                     reupdateResult={reupdateResult}
-                    loginUser={loginUser}
+                    loginUser={userName}
                 />
                 <Outlet
                     context={{

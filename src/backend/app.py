@@ -3,14 +3,10 @@ import time
 import mimetypes
 import urllib.parse
 import jwt
+import jwt.algorithms
 import requests 
 from flask import Flask, request, jsonify, Response
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
-from base64 import urlsafe_b64decode
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives import hashes
+
 import tiktoken
 import openai
 
@@ -52,6 +48,8 @@ AZURE_OPENAI_GPT_35_TURBO_16K_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_35_T
 AZURE_OPENAI_GPT_4_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_4_DEPLOYMENT")
 AZURE_OPENAI_GPT_4_32K_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_4_32K_DEPLOYMENT")
 AZURE_OPENAI_GPT_4O_MINI_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_4O_MINI_DEPLOYMENT")
+
+AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
 
 gpt_models = {
     "gpt-3.5-turbo": {
@@ -122,60 +120,28 @@ configure_azure_monitor()
 
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
-AUTHORITY = "https://login.microsoftonline.com/"
-CLIENT_ID = ""
-
-def convert_jwk_to_rsa_key(jwk):
-    """
-    Convert a JWK (JSON Web Key) to an RSA public key
-    """
-    # Base64URL decode n and e
-    n = int.from_bytes(urlsafe_b64decode(jwk['n'] + '=='), 'big')  # Add padding for base64 decoding
-    e = int.from_bytes(urlsafe_b64decode(jwk['e'] + '=='), 'big')  # Add padding for base64 decoding
-    print(f"n: {n}")
-    print(f"e: {e}")
-    # nとeからRSA公開鍵を作成する
-    public_numbers = rsa.RSAPublicNumbers(e, n)
-    public_key = public_numbers.public_key(backend=default_backend())
-    
-    return public_key
-
 
 def validate_token(token):
     try:
-        print("Token:", token)
+        # 1.公開鍵の一覧を取得
+        key_url = requests.get("https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration").json()["jwks_uri"]
+        keys = requests.get(key_url).json()["keys"]
+        # 2.IDトークンの署名を検証する公開鍵を抽出
         header = jwt.get_unverified_header(token)
-        print("Token header:", header)
-        jwks_url = f"{AUTHORITY}/discovery/v2.0/keys"
-        jwks = requests.get(jwks_url).json()
-        rsa_key = None
-
-        for key in jwks["keys"]:
+        for key in keys:
+            # kidが一致している公開鍵を抽出
             if key["kid"] == header["kid"]:
-                # JWKをRSA公開鍵に変換
-                rsa_key = convert_jwk_to_rsa_key(key)
+                public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key)
                 break
-        
-        if rsa_key is None:
-            raise ValueError("Public key not found in JWKs")
-        print("RSA Key:", rsa_key)
-        print("RSA Key type:", type(rsa_key))
-        # アクセストークンの検証
-        payload = jwt.decode(
+        # 3.IDトークンを検証
+        decoded_token = jwt.decode(
             token,
-            rsa_key,
-            algorithms=["RS256"],
-            audience=[
-                # CLIENT_ID, # カスタムAPI用のクライアントID
-                "00000003-0000-0000-c000-000000000000" # Microsoft Graphのaud
-            ]
-            # options={"verify_signature": True, "verify_aud": True}
+            public_key,
+            audience=AZURE_CLIENT_ID,
+            algorithms=["RS256"]
         )
-        return payload
-    except jwt.ExpiredSignatureError:
-        print('トークンの有効期限切れ')
-    except jwt.InvalidTokenError:
-        print('無効なトークン')
+        return decoded_token
+    # 検証に失敗した場合
     except Exception as e:
         print(f"Token validation error: {e}")
         return None
@@ -409,6 +375,5 @@ def delete_conversation():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    # app.run(port=5000, host='0.0.0.0')
     port = int(os.environ.get('HTTP_PLATFORM_PORT', 5000))
     app.run(debug=True, port=port)

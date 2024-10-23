@@ -1,4 +1,4 @@
-import { AskRequest, AskResponse, GptChatRequest, ChatRequest, ChatResponse, UserConversations, ConversationContent, DeleteResponse, DocSearchConversationContent } from "./models";
+import { DecodedToken, AskRequest, AskResponse, GptChatRequest, ChatRequest, ChatResponse, UserConversations, ConversationContent, DeleteResponse, DocSearchConversationContent } from "./models";
 
 export async function askApi(options: AskRequest): Promise<AskResponse> {
     const response = await fetch("/ask", {
@@ -19,6 +19,17 @@ export async function askApi(options: AskRequest): Promise<AskResponse> {
     }
 
     return parsedResponse;
+}
+ 
+export async function getLoginInfo(accessToken: string): Promise<DecodedToken> {
+    const response = await fetch("/userinfo", {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    const userInfo: DecodedToken = await response.json();
+    return userInfo;
 }
 
 export async function searchdocApi(options: ChatRequest, onStreamUpdate: (content: string) => void): Promise<AskResponse> {

@@ -8,11 +8,11 @@ const msalConfig: Configuration = {
         navigateToLoginRequestUrl: false,
     },
     cache: {
-        cacheLocation: "sessionStorage", // This configures where your cache will be stored
-        storeAuthStateInCookie: false, // Set this to "true" if you are having issues on IE11 or Edge
+        cacheLocation: "sessionStorage", // キャッシュが保存される場所
+        storeAuthStateInCookie: false, // IE11 または Edge で問題が発生する場合はこれを「true」に設定
     },
     system: {
-        allowNativeBroker: false, // Disables WAM Broker
+        allowNativeBroker: false, // WAM ブローカーを無効
         // loggerOptions: {
         //     loggerCallback: (level, message, containsPii) => {
         //         if (containsPii) {
@@ -39,4 +39,9 @@ const msalConfig: Configuration = {
 
 export const msalInstance = new PublicClientApplication(msalConfig);
 
+export const loginRequest = {
+    scopes: [
+        import.meta.env.VITE_CLIENT_ID + "/.default"
+    ]
+};
 // export default msalConfig;

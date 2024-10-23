@@ -1,3 +1,13 @@
+export type DecodedToken = {
+    iss: string;
+    aud: string;
+    exp: number;
+    iat: number;
+    sub: string;
+    name: string;
+    email: string;
+};
+
 export const enum Approaches {
     RetrieveThenRead = "rtr",
     ReadRetrieveRead = "rrr",
