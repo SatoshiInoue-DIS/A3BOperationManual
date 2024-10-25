@@ -83,7 +83,7 @@ def write_chatlog(approach: ApproachType, user_name: str, total_tokens: int, inp
                 "content" : input
             }, 
             {
-                "role" : "assistant" if approach.value == "chat" else "bot",
+                "role" : "assistant",
                 "content" : response
             }
         ]
@@ -126,7 +126,7 @@ def write_chatlog(approach: ApproachType, user_name: str, total_tokens: int, inp
                     "content" : input
                 },
                 {
-                    "role" : "assistant" if approach.value == "chat" else "bot",
+                    "role" : "assistant",
                     "content" : response
                 }
             ]

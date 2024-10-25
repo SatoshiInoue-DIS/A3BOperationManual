@@ -133,7 +133,7 @@ source quesion: {user_question}
         completion_deployment = completion_gpt_model.get("deployment")
 
         message_builder = MessageBuilder(self.system_message_chat_conversation)
-        messages = message_builder.get_messages_from_history_for_answer(
+        messages = message_builder.get_messages_from_history(
             history,
             history[-1]["user"]+ "\n\nSources:\n" + content[:1024], # モデルは長いシステム メッセージを適切に処理しません。ソースを最新のユーザー会話に移動して、フォローアップの質問プロンプトを解決します。
             )

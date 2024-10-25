@@ -13,7 +13,6 @@ const Layout = (): JSX.Element => {
     const [clearChatFunc, setClearChatFunc] = useState<() => void>(() => {});
     const [conversationContent, setConversationContent] = useState<[user: string, response: ChatResponse | AskResponse][]>([]);
     const [reupdateResult, setReupdateResult] = useState<UserConversations | null>(null);
-    const [approach, setApproach] = useState<string>("chat");
     
     useEffect(() => {
         const fetchLoginUser = async () => {
@@ -100,8 +99,7 @@ const Layout = (): JSX.Element => {
                         onClearChat: handleSetClearChat,
                         conversationContent,
                         updateReupdateResult,
-                        loginUser,
-                        approach,
+                        userName,
                         handleConversationClick
                     }}
                 />

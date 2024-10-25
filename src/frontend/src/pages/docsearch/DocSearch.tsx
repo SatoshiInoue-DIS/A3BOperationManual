@@ -5,7 +5,7 @@ import { useOutletContext, useLocation } from 'react-router-dom';
 
 import styles from "./DocSearch.module.css";
 import { UserConversations } from '../../api/models';
-import { searchdocApi, Approaches, AskResponse, ChatRequest, ChatTurn, createJSTTimeStamp, getConversationsHistoryApi, getDocSearchConversationContentApi } from "../../api";
+import { searchdocApi, Approaches, AskResponse, ChatRequest, GptChatTurn, createJSTTimeStamp, getConversationsHistoryApi, getConversationContentApi } from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { HowToUseList } from "../../components/HowToUse";
@@ -14,12 +14,12 @@ import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel
 import { SettingsButton } from "../../components/SettingsButton";
 
 const DocSearch = () => {
-    const { conversationId, onClearChat, conversationContent, updateReupdateResult, loginUser, handleConversationClick } = useOutletContext<{
+    const { conversationId, onClearChat, conversationContent, updateReupdateResult, userName, handleConversationClick } = useOutletContext<{
         conversationId: string | null,
         onClearChat: (clearFunc: () => void) => void,
         conversationContent: [user: string, response: AskResponse][],
         updateReupdateResult: (result: UserConversations) => void,
-        loginUser: string,
+        userName: string,
         handleConversationClick: (id: string) => void;
     }>();
     const location = useLocation();
@@ -37,14 +37,14 @@ const DocSearch = () => {
     const makeApiRequestForDocSearchConversationContent = async (conversation_id: string, approach: string) => {
         setClickedConversationId(conversation_id);
         try {
-            const result = await getDocSearchConversationContentApi(conversation_id, approach)
+            const result = await getConversationContentApi(conversation_id, approach)
             const content: [user: string, response: AskResponse][] = [];
             const messages = result.conversations
             // ユーザーとアシスタントの会話ペアを抽出
             for (let i = 0; i < messages.length; i += 2) {
                 const userMessage = messages[i];
                 const assistantMessage = messages[i + 1];
-                if (userMessage && assistantMessage && userMessage.role === 'user' && assistantMessage.role === 'bot') {
+                if (userMessage && assistantMessage && userMessage.role === 'user' && assistantMessage.role === 'assistant') {
                     // contentにペアを追加
                     content.push([
                         userMessage.content,  // ユーザーのメッセージ内容
@@ -123,9 +123,9 @@ const DocSearch = () => {
 
         try {
             setStreamResponse("");  // 新しいリクエストのためにリセット
-            const history: ChatTurn[] = answers.map(a => ({ user: a[0], bot: a[1].answer }));
+            const history: GptChatTurn[] = answers.map(a => ({ user: a[0], assistant: a[1].answer }));
             const request: ChatRequest = {
-                history: [...history, { user: question, bot: undefined }],
+                history: [...history, { user: question, assistant: undefined }],
                 approach: Approaches.ReadRetrieveRead,
                 overrides: {
                     gptModel: gptModel,
@@ -138,7 +138,7 @@ const DocSearch = () => {
                 conversation_id: conversationId,
                 timestamp: japanTimeStamp,
                 conversation_title: conversationTitle,
-                loginUser: loginUser,
+                loginUser: userName,
             };
             // ストリーミングの途中の更新を受け取りつつ、最終結果も得る
             const result = await searchdocApi(request, handleStreamUpdate);
@@ -151,7 +151,7 @@ const DocSearch = () => {
             setError(e);
         } finally {
             setIsLoading(false);
-            const reupdate_result: UserConversations = await getConversationsHistoryApi(loginUser);
+            const reupdate_result: UserConversations = await getConversationsHistoryApi(userName);
             updateReupdateResult(reupdate_result);
         }
     };

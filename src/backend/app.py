@@ -121,6 +121,11 @@ configure_azure_monitor()
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
 
+@app.route("/", defaults={"path": "index.html"})
+@app.route("/<path:path>")
+def static_file(path):
+    return app.send_static_file(path)
+
 def validate_token(token):
     try:
         # 1.公開鍵の一覧を取得
@@ -155,11 +160,6 @@ def userinfo():
         if user_info:  
             return jsonify(user_info)  
     return jsonify({"error": "Invalid token"}), 401
-
-@app.route("/", defaults={"path": "index.html"})
-@app.route("/<path:path>")
-def static_file(path):
-    return app.send_static_file(path)
 
 # Serve content files from blob storage from within the app to keep the example self-contained. 
 # *** NOTE *** this assumes that the content files are public, or at least that all users of the app
@@ -306,38 +306,6 @@ def get_conversation_content():
             return jsonify(None)
     except Exception as e:
         print(f"Error in get_conversation_content: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-# get DocSearch Conversation Content
-@app.route("/conversationcontent/docsearch", methods=["POST"])
-def get_docsearch_conversation_content():
-    conversation_id = request.json.get("conversation_id")
-    approach = request.json.get("approach")
-    content = {}
-    try:
-        # ユーザーの会話内容をクエリ
-        content_data = select_conversation_content(conversation_id, approach)
-        if content_data is None:
-            return jsonify(None)
-        # "messages" キーが存在するかどうか
-        if "messages" in content_data[0]:
-            content = {
-                "conversation_id": content_data[0]["conversation_id"],
-                "approach":content_data[0]["approach"],
-                "conversations":[
-                    {
-                        "role": msg["role"],
-                        "content": msg["content"]
-                    }
-                    for msg in content_data[0]["messages"]
-                ]
-            }
-            return jsonify(content)
-        else:
-            # "messages" キーがない、または空の場合
-            return jsonify(None)
-    except Exception as e:
-        print(f"Error in get_docsearch_conversation_content: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 def creat_title(input):

@@ -12,12 +12,12 @@ import { UserChatMessage } from "../../components/UserChatMessage";
 import { SettingsButton } from "../../components/SettingsButton";
 
 const Chat = () => {
-    const { conversationId, onClearChat, conversationContent, updateReupdateResult, loginUser, handleConversationClick } = useOutletContext<{
+    const { conversationId, onClearChat, conversationContent, updateReupdateResult, userName, handleConversationClick } = useOutletContext<{
         conversationId: string | null,
         onClearChat: (clearFunc: () => void) => void,
         conversationContent: [user: string, response: ChatResponse][],
         updateReupdateResult: (result: UserConversations) => void,
-        loginUser: string,
+        userName: string,
         handleConversationClick: (id: string) => void;
     }>();
     const location = useLocation();
@@ -124,7 +124,7 @@ const Chat = () => {
                 conversation_id: conversationId,
                 timestamp: japanTimeStamp,
                 conversation_title: conversationTitle,
-                loginUser: loginUser,
+                loginUser: userName,
             };
             // ストリーミングの途中の更新を受け取りつつ、最終結果も得る
             const result = await chatApi(request, handleStreamUpdate);
@@ -137,7 +137,7 @@ const Chat = () => {
             setError(e);
         } finally {
             setIsLoading(false);
-            const reupdate_result: UserConversations = await getConversationsHistoryApi(loginUser);
+            const reupdate_result: UserConversations = await getConversationsHistoryApi(userName);
             updateReupdateResult(reupdate_result);
         }
     };

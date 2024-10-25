@@ -40,13 +40,8 @@ export type AskResponse = {
     error?: string;
 };
 
-export type ChatTurn = {
-    user: string;
-    bot?: string;
-};
-
 export type ChatRequest = {
-    history: ChatTurn[];
+    history: GptChatTurn[];
     approach: Approaches;
     overrides?: AskRequestOverrides;
     conversation_id: string | null;
@@ -100,11 +95,6 @@ type Message = {
     content: string;
 };
 
-type DocSearchMessage = {
-    role: 'user' | 'bot';
-    content: string;
-};
-
 export type Conversation = {
     conversation_id: string; // 会話のID
     approach: string;
@@ -122,13 +112,6 @@ export type ConversationContent = {
     conversation_id: string; // 会話のID
     approach: string;
     conversations: Message[]; // 会話の配列
-    error?: string;
-}
-
-export type DocSearchConversationContent = {
-    conversation_id: string; // 会話のID
-    approach: string;
-    conversations: DocSearchMessage[]; // 会話の配列
     error?: string;
 }
 

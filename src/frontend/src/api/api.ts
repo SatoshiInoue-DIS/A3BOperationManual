@@ -1,4 +1,4 @@
-import { DecodedToken, AskRequest, AskResponse, GptChatRequest, ChatRequest, ChatResponse, UserConversations, ConversationContent, DeleteResponse, DocSearchConversationContent } from "./models";
+import { DecodedToken, AskRequest, AskResponse, GptChatRequest, ChatRequest, ChatResponse, UserConversations, ConversationContent, DeleteResponse } from "./models";
 
 export async function askApi(options: AskRequest): Promise<AskResponse> {
     const response = await fetch("/ask", {
@@ -172,24 +172,6 @@ export async function getConversationContentApi(conversation_id: string, approac
         })
     });
     const parsedResponse: ConversationContent = await response.json();
-    if (response.status > 299 || !response.ok) {
-        throw Error(parsedResponse.error || "Unknown error");
-    }
-    return parsedResponse;
-}
-
-export async function getDocSearchConversationContentApi(conversation_id: string, approach: string): Promise<DocSearchConversationContent> {
-    const response = await fetch("/conversationcontent/docsearch", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            conversation_id: conversation_id,
-            approach: approach
-        })
-    });
-    const parsedResponse: DocSearchConversationContent = await response.json();
     if (response.status > 299 || !response.ok) {
         throw Error(parsedResponse.error || "Unknown error");
     }
