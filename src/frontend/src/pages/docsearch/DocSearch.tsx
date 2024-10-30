@@ -5,7 +5,7 @@ import { useOutletContext, useLocation } from 'react-router-dom';
 
 import styles from "./DocSearch.module.css";
 import { UserConversations } from '../../api/models';
-import { searchdocApi, Approaches, AskResponse, ChatRequest, GptChatTurn, createJSTTimeStamp, getConversationsHistoryApi, getConversationContentApi } from "../../api";
+import { searchdocApi, Approaches, AskResponse, ChatRequest, GptChatTurn, createJSTTimeStamp, getConversationsHistoryApi } from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { HowToUseList } from "../../components/HowToUse";
@@ -14,52 +14,16 @@ import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel
 import { SettingsButton } from "../../components/SettingsButton";
 
 const DocSearch = () => {
-    const { conversationId, onClearChat, conversationContent, updateReupdateResult, userName, handleConversationClick } = useOutletContext<{
+    const { conversationId, onClearChat, conversationContent, updateReupdateResult, userName, handleConversationClick, makeApiRequestForConversationContent } = useOutletContext<{
         conversationId: string | null,
         onClearChat: (clearFunc: () => void) => void,
         conversationContent: [user: string, response: AskResponse][],
         updateReupdateResult: (result: UserConversations) => void,
         userName: string,
         handleConversationClick: (id: string) => void;
+        makeApiRequestForConversationContent: (conversation_id: string, approach: string) => void;
     }>();
-    const location = useLocation();
 
-    const clickedHistoryConversationId = location.state?.conversationId;
-    const clickedHistoryApproach = location.state?.approach;
-    useEffect(() => {
-        if (clickedHistoryConversationId) {
-            makeApiRequestForDocSearchConversationContent(clickedHistoryConversationId, clickedHistoryApproach);  // ページ遷移後にAPIリクエスト
-        }
-    }, [clickedHistoryConversationId]);
-
-    const [clickedConversationId, setClickedConversationId] = useState<string | null>(null);
-    
-    const makeApiRequestForDocSearchConversationContent = async (conversation_id: string, approach: string) => {
-        setClickedConversationId(conversation_id);
-        try {
-            const result = await getConversationContentApi(conversation_id, approach)
-            const content: [user: string, response: AskResponse][] = [];
-            const messages = result.conversations
-            // ユーザーとアシスタントの会話ペアを抽出
-            for (let i = 0; i < messages.length; i += 2) {
-                const userMessage = messages[i];
-                const assistantMessage = messages[i + 1];
-                if (userMessage && assistantMessage && userMessage.role === 'user' && assistantMessage.role === 'assistant') {
-                    // contentにペアを追加
-                    content.push([
-                        userMessage.content,  // ユーザーのメッセージ内容
-                        { answer: assistantMessage.content } // アシスタントの回答 (AskResponse型)
-                    ] as [user: string, response: AskResponse]);
-                }
-            }
-            setAnswers(content);
-            handleConversationClick(conversation_id);
-            lastQuestionRef.current = "kokokok";
-            localStorage.setItem('selectedConversationId', conversation_id);  // ローカルストレージに保存
-        } catch (error) {
-            console.error('Error in makeApiRequestForDocSearchConversationContent:', error);
-        }
-    }
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
 
     const [gptModel, setGptModel] = useState<string>("gpt-4o-mini");
@@ -84,6 +48,9 @@ const DocSearch = () => {
 
     const [conversationTitle, setConversationTitle] = useState<string | null>(null);
     const [] = useState<UserConversations>();
+    const [timestamp, setTimestamp] = useState<string | null>(null);
+    // 途中の応答を保持
+    const [streamResponse, setStreamResponse] = useState<string>("");
 
     const gpt_models: IDropdownOption[] = [
         { key: "gpt-3.5-turbo", text: "gpt-3.5-turbo" },
@@ -93,14 +60,24 @@ const DocSearch = () => {
         { key: "gpt-4o-mini", text: "gpt-4o-mini" }
     ];
 
+    // SideNavコンポーネントのnavigatから値を受け取る
+    const location = useLocation();
+    const clickedHistoryConversationId = location.state?.conversationId;
+    const clickedHistoryApproach = location.state?.approach;
+
+    useEffect(() => {
+        if (clickedHistoryConversationId) {
+            makeApiRequestForConversationContent(clickedHistoryConversationId, clickedHistoryApproach);  // ページ遷移後にAPIリクエスト
+            lastQuestionRef.current = "kokoko"
+        }
+    }, [clickedHistoryConversationId]);
+
     const temperatures: IDropdownOption[] = Array.from({ length: 11 }, (_, i) => ({ key: (i / 10).toFixed(1), text: (i / 10).toFixed(1) }));
-    const [timestamp, setTimestamp] = useState<string | null>(null);
+
     // conversationIdが更新されたときにtimestampをリセット
     useEffect(() => {
         setTimestamp(null);
     }, [conversationId]);
-
-    const [streamResponse, setStreamResponse] = useState<string>("");  // 途中の応答を保持
 
     // ストリームから部分的な応答を受け取り、蓄積
     const handleStreamUpdate = (chunk: string) => {
@@ -170,15 +147,21 @@ const DocSearch = () => {
         onClearChat(clearChat);
     }, [clearChat, onClearChat]);
 
+    // conversationContent が更新されたら answers にセット
     useEffect(() => {
         if (conversationContent) {
-            setAnswers(conversationContent); // conversationContent が更新されたら answers にセット
+            setAnswers(conversationContent);
         }
     }, [conversationContent]);
 
     useEffect(() => {
         chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" })
     }, [answers, isLoading, streamResponse]);
+
+    useEffect(() => {
+        onClearChat
+        handleConversationClick("clearID")
+    }, []);
 
     const onGptModelChange = (_ev?: React.FormEvent<HTMLDivElement>, option?: IDropdownOption) => {
         if (option !== undefined) {
@@ -229,11 +212,6 @@ const DocSearch = () => {
         setSelectedAnswer(index);
     };
 
-    useEffect(() => {
-        onClearChat
-        handleConversationClick("clearID")
-    }, []);
-
     return (
         <div className={styles.container}>
             <div className={styles.commandsContainer}>
@@ -261,10 +239,6 @@ const DocSearch = () => {
                                             answer={answer[1]}
                                             isSelected={selectedAnswer === index && activeAnalysisPanelTab !== undefined}
                                             onCitationClicked={c => onShowCitation(c, index)}
-                                            // onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab, index)}
-                                            // onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
-                                            // onFollowupQuestionClicked={q => makeApiRequest(q)}
-                                            // showFollowupQuestions={false}
                                         />
                                     </div>
                                 </div>
@@ -314,7 +288,6 @@ const DocSearch = () => {
                         activeCitation={activeCitation}
                         onActiveTabChanged={x => onToggleTab(x, selectedAnswer)}
                         citationHeight="810px"
-                        answer={answers[selectedAnswer][1]}
                         activeTab={activeAnalysisPanelTab}
                     />
                 )}

@@ -10,18 +10,26 @@ interface Props {
     conversationId: string | null;
     onClick: (id: string) => void;
     clearChat: () => void;
-    content: [user: string, response: ChatResponse | AskResponse][] | undefined;
-    updateConversationContent: (content: [user: string, response: ChatResponse | AskResponse][]) => void;
+    // content: [user: string, response: ChatResponse | AskResponse][] | undefined;
+    // updateConversationContent: (content: [user: string, response: ChatResponse | AskResponse][]) => void;
     reupdateResult: UserConversations | null;
     loginUser: string | null;
 }
 
-export const SideNav = ({ conversationId, onClick, clearChat, content, updateConversationContent, reupdateResult, loginUser }: Props) => {
-
+export const SideNav = ({ conversationId, onClick, clearChat,
+    //  content, updateConversationContent, 
+     reupdateResult, loginUser }: Props) => {
     // 表示/非表示を切り替える状況変数
     const [showSidebar, setShowSidebar] = useState<boolean>(true)
-
     const [conversationsData, setConversationsData] = useState<UserConversations>();
+    const [showMenu, setShowMenu] = useState<boolean>(false);
+    const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+    const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+    const menuContainerRef = useRef<HTMLDivElement | null>(null);
+    const yourComponentRef = useRef<HTMLDivElement | null>(null);
+    const prevScrollTop = useRef<number>(0);
+    const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
+    const [selectConversationTitle, setCelectConversationTitle] = useState<string | null>(null);
 
     useEffect(() => {
         if(loginUser) {
@@ -29,6 +37,90 @@ export const SideNav = ({ conversationId, onClick, clearChat, content, updateCon
         }
     }, [loginUser]);
 
+    useEffect(() => {
+        if (reupdateResult) {
+            setConversationsData(reupdateResult);
+        }
+    }, [reupdateResult]);
+
+    // メニューが画面外に出ないように位置を調整
+    useEffect(() => {
+        if (menuContainerRef.current) {
+            const menuRect = menuContainerRef.current.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            
+            // メニューが画面の下にはみ出す場合
+            if (menuRect.bottom > windowHeight) {
+                setMenuPosition((prevPosition) => ({
+                    ...prevPosition,
+                    top: prevPosition.top - (menuRect.bottom - windowHeight), // はみ出し分を引いて位置を調整
+                }));
+            }
+        }
+    }, [showMenu]);
+
+    // スクロールイベントに基づいてメニュー位置を更新
+    useEffect(() => {
+        const handleScroll = () => {
+            if (yourComponentRef.current && menuContainerRef.current && showMenu) {
+                const currentScrollTop = yourComponentRef.current.scrollTop;
+                const scrollDiff = currentScrollTop - prevScrollTop.current;
+                // スクロール方向に関わらずメニューの位置を更新
+                setMenuPosition((prevPosition) => ({
+                    ...prevPosition,
+                    top: prevPosition.top - scrollDiff,
+                }));
+                // スクロールの現在位置を更新
+                prevScrollTop.current = currentScrollTop;
+            }
+        };
+        // スクロールイベントの監視を追加
+        if (yourComponentRef.current) {
+            yourComponentRef.current.addEventListener('scroll', handleScroll);
+        }
+        return () => {
+            // クリーンアップ
+            if (yourComponentRef.current) {
+                yourComponentRef.current.removeEventListener('scroll', handleScroll);
+            }
+        };
+    }, [showMenu]);
+    
+    // どこか別の場所がクリックされたらメニューを閉じる
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setShowMenu(false);
+            setSelectedConversationId(null);
+        };
+        // ページ全体のクリックイベントを監視
+        document.addEventListener('click', handleClickOutside);
+        // クリーンアップ
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, []);
+    
+    useEffect(() => {
+        const getTitleByConversationId = (conversationId: string) => {
+            // conversationsDataが存在するかチェック
+            if (conversationsData && conversationsData.conversations) {
+                // conversations配列の中で指定されたconversation_idと一致するものを探す
+                const conversation = conversationsData.conversations.find(conv => conv.conversation_id === conversationId);
+                // 一致する会話があればそのtitleを返す
+                if (conversation) {
+                    return conversation.title;
+                }
+            }
+            // 見つからなかった場合、undefinedを返す
+            return null;
+        };
+        let title = null;
+        if(selectedConversationId) {
+            title = getTitleByConversationId(selectedConversationId);
+        }
+        setCelectConversationTitle(title)
+    }, [selectedConversationId]);
+    
     const makeApiRequest = async (loginUser: string) => {
         try {
             const result = await getConversationsHistoryApi(loginUser);
@@ -110,18 +202,6 @@ export const SideNav = ({ conversationId, onClick, clearChat, content, updateCon
         clearChat();
     }
 
-    useEffect(() => {
-        if (reupdateResult) {
-            setConversationsData(reupdateResult);
-        }
-    }, [reupdateResult]);
-
-    const [showMenu, setShowMenu] = useState<boolean>(false);
-    const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-    const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
-    const menuContainerRef = useRef<HTMLDivElement | null>(null);
-    const yourComponentRef = useRef<HTMLDivElement | null>(null);
-    const prevScrollTop = useRef<number>(0);
     // メニューの表示・非表示を切り替える
     const handleShowMenu = (conversationId:string, event: MouseEvent<HTMLDivElement>) => {
         // クリック位置の座標を取得
@@ -143,63 +223,7 @@ export const SideNav = ({ conversationId, onClick, clearChat, content, updateCon
         // メニューを表示
         setShowMenu(true);
     };
-    // メニューが画面外に出ないように位置を調整
-    useEffect(() => {
-        if (menuContainerRef.current) {
-            const menuRect = menuContainerRef.current.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
-            
-            // メニューが画面の下にはみ出す場合
-            if (menuRect.bottom > windowHeight) {
-                setMenuPosition((prevPosition) => ({
-                    ...prevPosition,
-                    top: prevPosition.top - (menuRect.bottom - windowHeight), // はみ出し分を引いて位置を調整
-                }));
-            }
-        }
-    }, [showMenu]);
-    // スクロールイベントに基づいてメニュー位置を更新
-    useEffect(() => {
-        const handleScroll = () => {
-            if (yourComponentRef.current && menuContainerRef.current && showMenu) {
-                const currentScrollTop = yourComponentRef.current.scrollTop;
-                const scrollDiff = currentScrollTop - prevScrollTop.current;
-                // スクロール方向に関わらずメニューの位置を更新
-                setMenuPosition((prevPosition) => ({
-                    ...prevPosition,
-                    top: prevPosition.top - scrollDiff,
-                }));
-                // スクロールの現在位置を更新
-                prevScrollTop.current = currentScrollTop;
-            }
-        };
-        // スクロールイベントの監視を追加
-        if (yourComponentRef.current) {
-            yourComponentRef.current.addEventListener('scroll', handleScroll);
-        }
-        return () => {
-            // クリーンアップ
-            if (yourComponentRef.current) {
-                yourComponentRef.current.removeEventListener('scroll', handleScroll);
-            }
-        };
-    }, [showMenu]);
-    
-    // どこか別の場所がクリックされたらメニューを閉じる
-    useEffect(() => {
-        const handleClickOutside = () => {
-            setShowMenu(false);
-            setSelectedConversationId(null);
-        };
-        // ページ全体のクリックイベントを監視
-        document.addEventListener('click', handleClickOutside);
-        // クリーンアップ
-        return () => {
-            document.removeEventListener('click', handleClickOutside);
-        };
-    }, []);
 
-    const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
     // 削除の確認をするモーダルを開く
     const openDeleteConfirmModal = () => {
         setIsOpenDeleteModal(!isOpenDeleteModal);
@@ -216,7 +240,6 @@ export const SideNav = ({ conversationId, onClick, clearChat, content, updateCon
             if (selectedConversationId) {
                 // 削除処理を実行
                 const result = await deleteConersationApi(selectedConversationId)
-
             }
         } catch (error) {
             console.error('Error handleDeleteConversation:', error);
@@ -231,29 +254,6 @@ export const SideNav = ({ conversationId, onClick, clearChat, content, updateCon
             }
         }
     };
-
-    const [selectConversationTitle, setCelectConversationTitle] = useState<string | null>(null);
-
-    useEffect(() => {
-        const getTitleByConversationId = (conversationId: string) => {
-            // conversationsDataが存在するかチェック
-            if (conversationsData && conversationsData.conversations) {
-                // conversations配列の中で指定されたconversation_idと一致するものを探す
-                const conversation = conversationsData.conversations.find(conv => conv.conversation_id === conversationId);
-                // 一致する会話があればそのtitleを返す
-                if (conversation) {
-                    return conversation.title;
-                }
-            }
-            // 見つからなかった場合、undefinedを返す
-            return null;
-        };
-        let title = null;
-        if(selectedConversationId) {
-            title = getTitleByConversationId(selectedConversationId);
-        }
-        setCelectConversationTitle(title)
-    }, [selectedConversationId]);
 
     const navigate = useNavigate();
 

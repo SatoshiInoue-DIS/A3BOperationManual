@@ -5,58 +5,22 @@ import { useOutletContext, useLocation } from 'react-router-dom';
 
 import styles from "./Chat.module.css";
 import { UserConversations } from '../../api/models';
-import { chatApi, Approaches, ChatResponse, GptChatRequest, GptChatTurn, getConversationsHistoryApi, createJSTTimeStamp, getConversationContentApi } from "../../api";
+import { chatApi, Approaches, ChatResponse, GptChatRequest, GptChatTurn, getConversationsHistoryApi, createJSTTimeStamp } from "../../api";
 import { AnswerChat, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { UserChatMessage } from "../../components/UserChatMessage";
 import { SettingsButton } from "../../components/SettingsButton";
 
 const Chat = () => {
-    const { conversationId, onClearChat, conversationContent, updateReupdateResult, userName, handleConversationClick } = useOutletContext<{
+    const { conversationId, onClearChat, conversationContent, updateReupdateResult, userName, handleConversationClick, makeApiRequestForConversationContent } = useOutletContext<{
         conversationId: string | null,
         onClearChat: (clearFunc: () => void) => void,
         conversationContent: [user: string, response: ChatResponse][],
         updateReupdateResult: (result: UserConversations) => void,
         userName: string,
         handleConversationClick: (id: string) => void;
+        makeApiRequestForConversationContent: (conversation_id: string, approach: string) => void;
     }>();
-    const location = useLocation();
-
-    const clickedHistoryConversationId = location.state?.conversationId;
-    const clickedHistoryApproach = location.state?.approach;
-    useEffect(() => {
-        if (clickedHistoryConversationId) {
-            makeApiRequestForConversationContent(clickedHistoryConversationId, clickedHistoryApproach);  // ページ遷移後にAPIリクエスト
-        }
-    }, [clickedHistoryConversationId, clickedHistoryApproach]);
-
-    const [clickedConversationId, setClickedConversationId] = useState<string | null>(null);
-
-    const makeApiRequestForConversationContent = async (conversation_id: string, approach: string) => {
-        setClickedConversationId(conversation_id);
-        try {
-            const result = await getConversationContentApi(conversation_id, approach)
-            const content: [user: string, response: ChatResponse][] = [];
-            const messages = result.conversations
-            // ユーザーとアシスタントの会話ペアを抽出
-            for (let i = 0; i < messages.length; i += 2) {
-                const userMessage = messages[i];
-                const assistantMessage = messages[i + 1];
-                if (userMessage && assistantMessage && userMessage.role === 'user' && assistantMessage.role === 'assistant') {
-                    // contentにペアを追加
-                    content.push([
-                        userMessage.content,  // ユーザーのメッセージ内容
-                        { answer: assistantMessage.content } // アシスタントの回答 (ChatResponse型)
-                    ] as [user: string, response: ChatResponse]);
-                }
-            }
-            setAnswers(content);
-            handleConversationClick(conversation_id);  
-            localStorage.setItem('selectedConversationId', conversation_id);  // ローカルストレージに保存
-        } catch (error) {
-            console.error('Error in makeApiRequestForConversationContent:', error);
-        }
-    }
 
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
 
@@ -75,6 +39,9 @@ const Chat = () => {
 
     const [conversationTitle, setConversationTitle] = useState<string | null>(null);
     const [] = useState<UserConversations>();
+    const [timestamp, setTimestamp] = useState<string | null>(null);
+    // 途中の応答を保持
+    const [streamResponse, setStreamResponse] = useState<string>(""); 
 
     const gpt_models: IDropdownOption[] = [
         { key: "gpt-3.5-turbo", text: "gpt-3.5-turbo" },
@@ -84,14 +51,23 @@ const Chat = () => {
         { key: "gpt-4o-mini", text: "gpt-4o-mini" }
     ];
 
+    // SideNavコンポーネントのnavigatから値を受け取る
+    const location = useLocation();
+    const clickedHistoryConversationId = location.state?.conversationId;
+    const clickedHistoryApproach = location.state?.approach;
+
+    useEffect(() => {
+        if (clickedHistoryConversationId) {
+            makeApiRequestForConversationContent(clickedHistoryConversationId, clickedHistoryApproach);  // ページ遷移後にAPIリクエスト
+        }
+    }, [clickedHistoryConversationId, clickedHistoryApproach]);
+
     const temperatures: IDropdownOption[] = Array.from({ length: 11 }, (_, i) => ({ key: (i / 10).toFixed(1), text: (i / 10).toFixed(1) }));
-    const [timestamp, setTimestamp] = useState<string | null>(null);
+
     // conversationIdが更新されたときにtimestampをリセット
     useEffect(() => {
         setTimestamp(null);
     }, [conversationId]);
-
-    const [streamResponse, setStreamResponse] = useState<string>("");  // 途中の応答を保持
 
     // ストリームから部分的な応答を受け取り、蓄積
     const handleStreamUpdate = (chunk: string) => {
@@ -154,15 +130,21 @@ const Chat = () => {
         onClearChat(clearChat);
     }, [clearChat, onClearChat]);
 
+    // conversationContent が更新されたら answers にセット
     useEffect(() => {
         if (conversationContent) {
-            setAnswers(conversationContent); // conversationContent が更新されたら answers にセット
+            setAnswers(conversationContent);
         }
     }, [conversationContent]);
 
     useEffect(() => {
         chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" })
     }, [answers, isLoading, streamResponse]);
+    
+    useEffect(() => {
+        onClearChat
+        handleConversationClick("clearID")
+    }, []);
 
     const onGptModelChange = (_ev?: React.FormEvent<HTMLDivElement>, option?: IDropdownOption) => {
         if (option !== undefined) {
@@ -179,11 +161,6 @@ const Chat = () => {
             setTemperature(option.key as string);
         }
     };
-
-    useEffect(() => {
-        onClearChat
-        handleConversationClick("clearID")
-    }, []);
 
     return (
         <div className={styles.container}>
