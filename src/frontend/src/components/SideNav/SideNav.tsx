@@ -250,6 +250,8 @@ export const SideNav = ({ conversationId, onClick, clearChat,
             // 更新
             if (loginUser) {
                 const result = await getConversationsHistoryApi(loginUser);
+                // チャット削除時に新規チャットを開始
+                creatNewChat("clearID")
                 setConversationsData(result)
             }
         }
