@@ -308,7 +308,7 @@ export const SideNav = ({ conversationId, onClick, clearChat,
                                                         {conversation.title}
                                                     </div>
                                                 </a>
-                                                <div
+                                                {/* <div
                                                     className={styles.HistoryOptionBtnContainer}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -316,7 +316,7 @@ export const SideNav = ({ conversationId, onClick, clearChat,
                                                     }}
                                                 >
                                                     <span className={styles.HistoryOptionBtn}></span>
-                                                </div>
+                                                </div> */}
                                             </li>
                                         ))}
                                     </ol>

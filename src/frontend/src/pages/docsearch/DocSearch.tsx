@@ -26,7 +26,7 @@ const DocSearch = () => {
 
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
 
-    const [gptModel, setGptModel] = useState<string>("gpt-4o-mini");
+    const [gptModel, setGptModel] = useState<string>("gpt-4o");
     const [temperature, setTemperature] = useState<string>("0.0");
 
     const [retrieveCount, setRetrieveCount] = useState<number>(5);
@@ -57,7 +57,8 @@ const DocSearch = () => {
         { key: "gpt-3.5-turbo-16k", text: "gpt-3.5-turbo-16k" },
         { key: "gpt-4", text: "gpt-4" },
         { key: "gpt-4-32k", text: "gpt-4-32k" },
-        { key: "gpt-4o-mini", text: "gpt-4o-mini" }
+        { key: "gpt-4o-mini", text: "gpt-4o-mini" },
+        { key: "gpt-4o", text: "gpt-4o" }
     ];
 
     // SideNavコンポーネントのnavigatから値を受け取る

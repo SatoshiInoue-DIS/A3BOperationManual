@@ -48,6 +48,7 @@ AZURE_OPENAI_GPT_35_TURBO_16K_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_35_T
 AZURE_OPENAI_GPT_4_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_4_DEPLOYMENT")
 AZURE_OPENAI_GPT_4_32K_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_4_32K_DEPLOYMENT")
 AZURE_OPENAI_GPT_4O_MINI_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_4O_MINI_DEPLOYMENT")
+AZURE_OPENAI_GPT_4O_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_4O_DEPLOYMENT")
 
 AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
 
@@ -76,6 +77,12 @@ gpt_models = {
         "deployment": AZURE_OPENAI_GPT_4O_MINI_DEPLOYMENT,
         "max_tokens": 16384,
         "encoding": tiktoken.encoding_for_model("gpt-4o-mini")
+    }
+    ,
+    "gpt-4o": {
+        "deployment": AZURE_OPENAI_GPT_4O_DEPLOYMENT,
+        "max_tokens": 16384,
+        "encoding": tiktoken.encoding_for_model("gpt-4o")
     }
 }
 

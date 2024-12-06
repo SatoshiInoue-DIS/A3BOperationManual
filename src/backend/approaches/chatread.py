@@ -11,17 +11,19 @@ import tiktoken
 # Simple read implementation, using the OpenAI APIs directly. It uses OpenAI to generate an completion 
 # (answer) with that prompt.
 class ChatReadApproach(Approach):
-
+    system_message_chat_conversation = """If someone asks you to write a report or a daily report, don't write it. Instead, tell them in Japanese that you can't do it.
+"""
     def run(self, user_name: str, history: list[dict[str, str]], overrides: dict[str, Any], conversationId: str, timestamp: str, title: str) -> Any:
         chat_model = overrides.get("gptModel")
         chat_gpt_model = get_gpt_model(chat_model)
         chat_deployment = chat_gpt_model.get("deployment")
 
         systemPrompt =  overrides.get("systemPrompt")
+        concatenatedSystemPrompt = self.system_message_chat_conversation + systemPrompt
         temaperature = float(overrides.get("temperature"))
 
         user_q = history[-1]["user"]
-        message_builder = MessageBuilder(systemPrompt)
+        message_builder = MessageBuilder(concatenatedSystemPrompt)
         messages = message_builder.get_messages_from_history(
             history, 
             user_q
