@@ -197,6 +197,33 @@ export const SideNav = ({ conversationId, onClick, clearChat,
         return acc;
     }, {} as Record<string, Conversation[]>);
 
+    // アプローチごとに分ける
+    const chatGroup: Record<string, Conversation[]> = {};
+    const docsearchGroup: Record<string, Conversation[]> = {};
+
+    // groupedConversations を Chat と DocSearch に分類
+    if (groupedConversations) {
+        Object.keys(groupedConversations).forEach((groupName) => {
+            const conversations = groupedConversations[groupName];
+        
+            // approach が "chat" のものを chatGroup に追加
+            const chatConversations = conversations.filter(
+                (conversation) => conversation.approach === "chat"
+            );
+            if (chatConversations.length > 0) {
+                chatGroup[groupName] = chatConversations;
+            }
+        
+            // approach が "docsearch" のものを docsearchGroup に追加
+            const docsearchConversations = conversations.filter(
+                (conversation) => conversation.approach === "docsearch"
+            );
+            if (docsearchConversations.length > 0) {
+                docsearchGroup[groupName] = docsearchConversations;
+            }
+        });
+    }
+
     const creatNewChat = (id: string) => {
         onClick(id);
         clearChat();
@@ -286,42 +313,78 @@ export const SideNav = ({ conversationId, onClick, clearChat,
                                 </div>
                             </div>
                         </div>
-                        <div ref={yourComponentRef} className={styles.SideNavList}>
-                            {groupedConversations && Object.entries(groupedConversations)
-                                .sort((a, b) => {
-                                    return groupOrder.indexOf(a[0]) - groupOrder.indexOf(b[0]);
-                                })
-                                .map(([timestamp, conversations], index) => (
-                                <div key={index} className={styles.ConversationHistoryContainer}>
-                                    <div className={styles.HistoryGroupName}>
-                                        <span>{timestamp}</span>
-                                    </div>
-                                    <ol className={styles.HistoryTitles}>
-                                        {conversations.map((conversation, convIndex) => (
-                                            <li
-                                                key={convIndex}
-                                                className={`${styles.HistoryTitleContainer} ${conversationId === conversation.conversation_id || selectedConversationId === conversation.conversation_id ? styles.clicked : ""}`}
-                                                onClick={() => handleConversationClick(conversation.conversation_id, conversation.approach)}
-                                            >
-                                                <a>
-                                                    <div className={styles.ChatTitle}>
-                                                        {conversation.title}
-                                                    </div>
-                                                </a>
-                                                {/* <div
-                                                    className={styles.HistoryOptionBtnContainer}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleShowMenu(conversation.conversation_id, e);
-                                                    }}
-                                                >
-                                                    <span className={styles.HistoryOptionBtn}></span>
-                                                </div> */}
-                                            </li>
-                                        ))}
-                                    </ol>
+                        <div className={styles.SideNavMain}>
+                            <details className={styles.HistoryBox}>
+                                <summary className={styles.HistorySummary}>ChatGPT</summary>
+                                <div ref={yourComponentRef} className={styles.SideNavList}>
+                                    {chatGroup && Object.entries(chatGroup)
+                                        .sort((a, b) => {
+                                            return groupOrder.indexOf(a[0]) - groupOrder.indexOf(b[0]);
+                                        })
+                                        .map(([timestamp, conversations], index) => (
+                                        <div key={index} className={styles.ConversationHistoryContainer}>
+                                            <div className={styles.HistoryGroupName}>
+                                                <span>{timestamp}</span>
+                                            </div>
+                                            <ol className={styles.HistoryTitles}>
+                                                {conversations.map((conversation, convIndex) => (
+                                                    <li
+                                                        key={convIndex}
+                                                        className={`${styles.HistoryTitleContainer} ${conversationId === conversation.conversation_id || selectedConversationId === conversation.conversation_id ? styles.clicked : ""}`}
+                                                        onClick={() => handleConversationClick(conversation.conversation_id, conversation.approach)}
+                                                    >
+                                                        <a>
+                                                            <div className={styles.ChatTitle}>
+                                                                {conversation.title}
+                                                            </div>
+                                                        </a>
+                                                        {/* <div
+                                                            className={styles.HistoryOptionBtnContainer}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleShowMenu(conversation.conversation_id, e);
+                                                            }}
+                                                        >
+                                                            <span className={styles.HistoryOptionBtn}></span>
+                                                        </div> */}
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                            </details>
+                            <details className={styles.HistoryBox}>
+                                <summary className={styles.HistorySummary}>研修テキスト内FAQ</summary>
+                                <div ref={yourComponentRef} className={styles.SideNavList}>
+                                    {docsearchGroup && Object.entries(docsearchGroup)
+                                        .sort((a, b) => {
+                                            return groupOrder.indexOf(a[0]) - groupOrder.indexOf(b[0]);
+                                        })
+                                        .map(([timestamp, conversations], index) => (
+                                        <div key={index} className={styles.ConversationHistoryContainer}>
+                                            <div className={styles.HistoryGroupName}>
+                                                <span>{timestamp}</span>
+                                            </div>
+                                            <ol className={styles.HistoryTitles}>
+                                                {conversations.map((conversation, convIndex) => (
+                                                    <li
+                                                        key={convIndex}
+                                                        className={`${styles.HistoryTitleContainer} ${conversationId === conversation.conversation_id || selectedConversationId === conversation.conversation_id ? styles.clicked : ""}`}
+                                                        onClick={() => handleConversationClick(conversation.conversation_id, conversation.approach)}
+                                                    >
+                                                        <a>
+                                                            <div className={styles.ChatTitle}>
+                                                                {conversation.title}
+                                                            </div>
+                                                        </a>
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </div>
+                                    ))}
+                                </div>
+                            </details>
                         </div>
                         {showMenu && (
                             <div

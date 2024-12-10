@@ -24,7 +24,8 @@ const Layout = (): JSX.Element => {
             for (let i = 0; i < messages.length; i += 2) {
                 const userMessage = messages[i];
                 const assistantMessage = messages[i + 1];
-                if (userMessage && assistantMessage && userMessage.role === 'user' && assistantMessage.role === 'assistant') {
+                // assistantの前はbotという名前で使用していたため、過去データが残っているためbotも残す仕様とする
+                if (userMessage && assistantMessage && userMessage.role === 'user' && (assistantMessage.role === 'assistant' || assistantMessage.role === 'bot')) {
                     // contentにペアを追加
                     content.push([
                         userMessage.content,  // ユーザーのメッセージ内容
@@ -85,7 +86,7 @@ const Layout = (): JSX.Element => {
             <header className={styles.header} role={"banner"}>
                 <div className={styles.headerContainer}>
                     <Link to="/" className={styles.headerTitleContainer}>
-                        <h3 className={styles.headerTitleLeft}>A3B_FAQ（IT基礎コース）</h3>
+                        <h3 className={styles.headerTitleLeft}>（仮）A3B_FAQ（IT基礎 & 開発基礎）</h3>
                     </Link>
                     <nav>
                         <ul className={styles.headerNavList}>

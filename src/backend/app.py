@@ -28,7 +28,7 @@ from opentelemetry.instrumentation.flask import FlaskInstrumentor
 # .envファイルの内容を読み込見込む
 load_dotenv()
 
-# Replace these with your own values, either in environment variables or directly here
+# これらを環境変数または直接ここにある独自の値に置き換えてください。
 AZURE_STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
 AZURE_STORAGE_CONTAINER = os.environ.get("AZURE_STORAGE_CONTAINER")
 
@@ -52,44 +52,11 @@ AZURE_OPENAI_GPT_4O_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_4O_DEPLOYMENT"
 
 AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
 
-gpt_models = {
-    "gpt-3.5-turbo": {
-        "deployment": AZURE_OPENAI_GPT_35_TURBO_DEPLOYMENT,
-        "max_tokens": 4096,
-        "encoding": tiktoken.encoding_for_model("gpt-3.5-turbo")
-    },
-    "gpt-3.5-turbo-16k": {
-        "deployment": AZURE_OPENAI_GPT_35_TURBO_16K_DEPLOYMENT,
-        "max_tokens": 16384,
-        "encoding": tiktoken.encoding_for_model("gpt-3.5-turbo")
-    },
-    "gpt-4": {
-        "deployment": AZURE_OPENAI_GPT_4_DEPLOYMENT,
-        "max_tokens": 8192,
-        "encoding": tiktoken.encoding_for_model("gpt-4")
-    },
-    "gpt-4-32k": {
-        "deployment": AZURE_OPENAI_GPT_4_32K_DEPLOYMENT,
-        "max_tokens": 32768,
-        "encoding": tiktoken.encoding_for_model("gpt-4-32k")
-    },
-    "gpt-4o-mini": {
-        "deployment": AZURE_OPENAI_GPT_4O_MINI_DEPLOYMENT,
-        "max_tokens": 16384,
-        "encoding": tiktoken.encoding_for_model("gpt-4o-mini")
-    }
-    ,
-    "gpt-4o": {
-        "deployment": AZURE_OPENAI_GPT_4O_DEPLOYMENT,
-        "max_tokens": 16384,
-        "encoding": tiktoken.encoding_for_model("gpt-4o")
-    }
-}
-
-# Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and Blob Storage (no secrets needed, 
-# just use 'az login' locally, and managed identity when deployed on Azure). If you need to use keys, use separate AzureKeyCredential instances with the 
-# keys for each service
-# If you encounter a blocking error during a DefaultAzureCredntial resolution, you can exclude the problematic credential by using a parameter (ex. exclude_shared_token_cache_credential=True)
+# 現在のユーザー ID を使用して、Azure OpenAI、Cognitive Search、Blob Storage で認証します (シークレットは不要です。
+# ローカルでは 'az login' を使用し、Azure にデプロイする場合はマネージド ID を使用します)。
+# キーを使用する必要がある場合は、各サービスのキーを持つ個別の AzureKeyCredential インスタンスを使用します。
+# DefaultAzureCredntial 解決中にブロッキング エラーが発生した場合は、パラメーターを使用して問題のある資格情報を除外できます
+# (例: exclude_shared_token_cache_credential=True)
 azure_credential = DefaultAzureCredential()
 
 # Used by the OpenAI SDK
@@ -97,13 +64,13 @@ openai.api_type = "azure"
 openai.api_base = f"https://{AZURE_OPENAI_SERVICE}.openai.azure.com"
 openai.api_version = AZURE_OPENAI_API_VERSION
 
-# Comment these two lines out if using keys, set your API key in the OPENAI_API_KEY environment variable instead
+# キーを使用する場合は、これらの2行をコメントアウトし、代わりにOPENAI_API_KEY環境変数にAPIキーを設定します。
 openai.api_type = "azure_ad"
 openai_token = azure_credential.get_token("https://cognitiveservices.azure.com/.default")
 openai.api_key = openai_token.token
 # openai.api_key = os.environ.get("AZURE_OPENAI_KEY")
 
-# Set up clients for Cognitive Search and Storage
+# Cognitive SearchとStorageのクライアントを設定する
 search_client = SearchClient(
     endpoint=f"https://{AZURE_SEARCH_SERVICE}.search.windows.net",
     index_name=AZURE_SEARCH_INDEX,
@@ -168,9 +135,9 @@ def userinfo():
             return jsonify(user_info)  
     return jsonify({"error": "Invalid token"}), 401
 
-# Serve content files from blob storage from within the app to keep the example self-contained. 
-# *** NOTE *** this assumes that the content files are public, or at least that all users of the app
-# can access all the files. This is also slow and memory hungry.
+# 例を自己完結型に保つために、アプリ内から BLOB ストレージからコンテンツ ファイルを提供します。
+# *** 注意 *** これは、コンテンツ ファイルが公開されているか、少なくともアプリのすべてのユーザーが
+# すべてのファイルにアクセスできることを前提としています。これもまた遅く、メモリを大量に消費します。
 @app.route("/content/<path>")
 def content_file(path):
     try:

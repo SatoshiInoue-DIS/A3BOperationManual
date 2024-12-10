@@ -60,6 +60,7 @@ const Chat = () => {
     useEffect(() => {
         if (clickedHistoryConversationId) {
             makeApiRequestForConversationContent(clickedHistoryConversationId, clickedHistoryApproach);  // ページ遷移後にAPIリクエスト
+            lastQuestionRef.current = "kokoko"
         }
     }, [clickedHistoryConversationId, clickedHistoryApproach]);
 
@@ -170,43 +171,50 @@ const Chat = () => {
             </div>
             <div className={styles.chatRoot}>
                 <div className={styles.chatContainer}>
-                    <div className={styles.chatMessageStream}>
-                        {answers.map((answer, index) => (
-                            <div key={index}>
-                                <UserChatMessage message={answer[0]} />
-                                <div className={styles.chatMessageGpt}>
-                                    <div className={styles.botThumbnailContainer}>
-                                        <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
+                    {!lastQuestionRef.current ? (
+                        <div className={styles.chatEmptyState}>
+                            <img className={styles.companylogo} src="./companylogo.png" alt="company-logo" />
+                            <h1 className={styles.chatEmptyStateTitle}>なにかお手伝いできることはありますか？</h1>
+                        </div>
+                    ) : (
+                        <div className={styles.chatMessageStream}>
+                            {answers.map((answer, index) => (
+                                <div key={index}>
+                                    <UserChatMessage message={answer[0]} />
+                                    <div className={styles.chatMessageGpt}>
+                                        <div className={styles.botThumbnailContainer}>
+                                            <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
+                                        </div>
+                                        <AnswerChat key={index} answer={answer[1]} isSelected={selectedAnswer === index} />
                                     </div>
-                                    <AnswerChat key={index} answer={answer[1]} isSelected={selectedAnswer === index} />
                                 </div>
-                            </div>
-                        ))}
-                        {isLoading && (
-                            <>
-                                <UserChatMessage message={lastQuestionRef.current} />
-                                <div className={styles.chatMessageGptMinWidth}>
-                                    <div className={styles.botThumbnailContainer}>
-                                        <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
+                            ))}
+                            {isLoading && (
+                                <>
+                                    <UserChatMessage message={lastQuestionRef.current} />
+                                    <div className={styles.chatMessageGptMinWidth}>
+                                        <div className={styles.botThumbnailContainer}>
+                                            <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
+                                        </div>
+                                        <AnswerLoading streamResponse={streamResponse}/>
                                     </div>
-                                    <AnswerLoading streamResponse={streamResponse}/>
-                                </div>
-                            </>
-                        )}
-                        {error ? (
-                            <>
-                                <UserChatMessage message={lastQuestionRef.current} />
-                                <div className={styles.chatMessageGptMinWidth}>
-                                    <div className={styles.botThumbnailContainer}>
-                                        <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
+                                </>
+                            )}
+                            {error ? (
+                                <>
+                                    <UserChatMessage message={lastQuestionRef.current} />
+                                    <div className={styles.chatMessageGptMinWidth}>
+                                        <div className={styles.botThumbnailContainer}>
+                                            <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
+                                        </div>
+                                        <AnswerError error={error.toString()} onRetry={() => makeApiRequest(lastQuestionRef.current)} />
                                     </div>
-                                    <AnswerError error={error.toString()} onRetry={() => makeApiRequest(lastQuestionRef.current)} />
-                                </div>
-                            </>
-                        ) : null}
-                        <div ref={chatMessageStreamEnd} />
-                    </div>
-
+                                </>
+                            ) : null}
+                            <div ref={chatMessageStreamEnd} />
+                        </div>
+                    )}
+                    
                     <div className={styles.chatInput}>
                         <QuestionInput
                             clearOnSend

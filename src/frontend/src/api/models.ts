@@ -91,7 +91,8 @@ export type AccessToken = {
 };
 
 type Message = {
-    role: 'user' | 'assistant';
+    // assistantの前はbotという名前で使用していたため、過去データが残っているためbotも残す仕様とする
+    role: 'user' | 'assistant' | 'bot';
     content: string;
 };
 
