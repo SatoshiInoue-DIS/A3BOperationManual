@@ -86,7 +86,6 @@ export async function searchdocApi(options: ChatRequest, onStreamUpdate: (conten
         // このチャンクも表示する関係で表示が崩れていたので検索情報のチャンクは表示させないように一旦tmpに退避させている
         result += tmp;
         tmp = chunk;
-        result += chunk;
     }
     const parsedResponse: string = await JSON.stringify({answer: result});
     // 最終的な結果をJSON形式で解析
