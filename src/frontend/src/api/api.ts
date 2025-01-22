@@ -29,6 +29,10 @@ export async function getLoginInfo(accessToken: string): Promise<DecodedToken> {
     });
 
     const userInfo: DecodedToken = await response.json();
+    // rolesが存在しない場合にデフォルト値を追加（オプション）
+    if (!userInfo.roles) {
+        userInfo.roles = "Students";
+    }
     return userInfo;
 }
 
@@ -172,7 +176,9 @@ export async function chatApi(options: GptChatRequest, onStreamUpdate: (content:
 }
 
 export function getCitationFilePath(citation: string): string {
-    return `/content/${citation}`;
+    // PDFビュアーのカスタマイズ
+    const queryParameters = "#view=FitV&pagemode=none&toolbar=0"
+    return `/content/${citation}${queryParameters}`;
 }
 
 export async function getConversationsHistoryApi(loginUser: string): Promise<UserConversations> {

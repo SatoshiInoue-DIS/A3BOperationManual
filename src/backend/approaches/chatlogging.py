@@ -15,6 +15,7 @@ from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 # .envファイルの内容を読み込見込む
 load_dotenv()
+# load_dotenv(dotenv_path=("C:/inetpub/wwwroot/Test/.azure/OperationManual/.env"))
 
 # CosmosDB
 endpoint = os.environ.get("AZURE_COSMOSDB_ENDPOINT")

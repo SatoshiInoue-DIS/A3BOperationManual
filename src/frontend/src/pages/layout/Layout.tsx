@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, NavLink, Link } from "react-router-dom";
+import { Outlet, NavLink, Link, useNavigate } from "react-router-dom";
 import { useMsalAuth } from "../../auth/useMsalAuth";
 import { SideNav } from "../../components/SideNav";
 import styles from "./Layout.module.css";
@@ -8,8 +8,10 @@ import { ChatResponse, UserConversations, AskResponse } from '../../api/models';
 import { v4 as uuidv4 } from 'uuid';
 
 const Layout = (): JSX.Element => {
-    const loginUser: Promise<string | null> = useMsalAuth();
+    const loginUserInfo: Promise<{name: string, roles: string}> = useMsalAuth();
     const [userName, setUserName] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string>("none");
+    const navigate = useNavigate(); // useNavigate フックを取得
     const [conversationId, setConversationId] = useState<string | null>(null);  
     const [clearChatFunc, setClearChatFunc] = useState<() => void>(() => {});
     const [conversationContent, setConversationContent] = useState<[user: string, response: ChatResponse | AskResponse][]>([]);
@@ -43,9 +45,27 @@ const Layout = (): JSX.Element => {
 
     useEffect(() => {
         const fetchLoginUser = async () => {
-            const result = await loginUser; // Promiseの結果を待つ
+            const result = await loginUserInfo; // Promiseの結果を待つ
             if (result) {
-                setUserName(result)
+                const name = result.name
+                const roles = result.roles
+                let role = "none"
+                // 受講者ロールが含まれていたら
+                if (roles.includes("Students")) {
+                    role = "Students"
+                // 講師ロールが含まれていたら
+                } else if (roles.includes("Lecturer")) {
+                    role = "Lecturer"
+                // それ以外
+                } else {
+                    role = "none"
+                }
+                setUserName(name)
+                setUserRole(role)
+                 // `role` が "Students" の場合に /docsearch に遷移
+                if (userRole === "Students" && location.pathname !== '/docsearch') {
+                    navigate('/docsearch'); // リダイレクト処理);
+                }
                 const savedConversationId = localStorage.getItem('selectedConversationId');  
                 if (savedConversationId) {  
                     setConversationId(savedConversationId);
@@ -58,8 +78,8 @@ const Layout = (): JSX.Element => {
             }
         }
         fetchLoginUser(); // 非同期処理を呼び出し
-    }, [loginUser]);
-    
+    }, [loginUserInfo,  location.pathname]);
+
     const handleConversationClick = (id: string) => {
         if (id == "clearID") {
             // IDを変更する
@@ -85,16 +105,18 @@ const Layout = (): JSX.Element => {
         <div className={styles.layout}>
             <header className={styles.header} role={"banner"}>
                 <div className={styles.headerContainer}>
-                    <Link to="/" className={styles.headerTitleContainer}>
+                    <div className={styles.headerTitleContainer}>
                         <h3 className={styles.headerTitleLeft}>（仮）A3B_FAQ（IT基礎 & 開発基礎）</h3>
-                    </Link>
+                    </div>
                     <nav>
                         <ul className={styles.headerNavList}>
-                            <li>
-                                <NavLink to="/" className={({ isActive }) => (isActive ? styles.headerNavPageLinkActive : styles.headerNavPageLink)}>
-                                    ChatGPT
-                                </NavLink>
-                            </li>
+                            {userRole == "Lecturer" && (
+                                <li>
+                                    <NavLink to="/" className={({ isActive }) => (isActive ? styles.headerNavPageLinkActive : styles.headerNavPageLink)}>
+                                        ChatGPT
+                                    </NavLink>
+                                </li>
+                            )}
                             <li className={styles.headerNavLeftMargin}>
                                 <NavLink to="/docsearch" className={({ isActive }) => (isActive ? styles.headerNavPageLinkActive : styles.headerNavPageLink)}>
                                     研修テキスト内FAQ
@@ -113,6 +135,7 @@ const Layout = (): JSX.Element => {
                     clearChat={clearChatFunc}
                     reupdateResult={reupdateResult}
                     loginUser={userName}
+                    UserRole={userRole}
                 />
                 <Outlet
                     context={{

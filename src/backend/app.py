@@ -27,6 +27,7 @@ from opentelemetry.instrumentation.flask import FlaskInstrumentor
 
 # .envファイルの内容を読み込見込む
 load_dotenv()
+# load_dotenv(dotenv_path=("C:/inetpub/wwwroot/Test/.azure/OperationManual/.env"))
 
 # これらを環境変数または直接ここにある独自の値に置き換えてください。
 AZURE_STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")

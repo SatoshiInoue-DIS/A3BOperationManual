@@ -13,7 +13,7 @@ import tiktoken
 # (answer) with that prompt.
 class ChatReadApproach(Approach):
     system_message_chat_conversation = """Assistant helps the customer questions. keep your answers in Japanese.
-    If they ask you to write a report or a daily report, don't reply and tell them you can't do it.
+    If you are asked to write a report, daily report do not reply and tell them you cannot do so.
     For tabular information, return it as Markdown, not HTML. 
 """
     def run(self, user_name: str, history: list[dict[str, str]], overrides: dict[str, Any], conversationId: str, timestamp: str, title: str) -> Any:

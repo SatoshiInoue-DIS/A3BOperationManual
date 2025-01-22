@@ -24,9 +24,6 @@ export function parseAnswerToHtml(answer: string, onCitationClicked: (citationFi
     const parts = parsedAnswer.split(/\[([^\]]+)\]/g);
 
     const fragments: string[] = parts.map((part, index) => {
-        const parts = part.split("/");
-        part = parts[parts.length - 1];
-
         if (index % 2 === 0) {
             return part; // 偶数インデックス：通常のテキスト
         } else {

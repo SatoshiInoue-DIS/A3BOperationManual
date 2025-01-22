@@ -9,6 +9,8 @@ import { AnswerIcon } from "./AnswerIcon";
 
 import ReactMarkdown from 'react-markdown'
 import CodeBlock from "../CodeBlock";
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 interface Props {
     answer: ChatResponse;
@@ -22,7 +24,10 @@ export const AnswerChat = ({ answer, isSelected }: Props) => {
         <Stack className={`${styles.answerContainer} ${isSelected && styles.selected}`} verticalAlign="space-between">
             <Stack.Item grow>
                 <div className={styles.answerText}>
-                    <ReactMarkdown children={parsedAnswer.answerHtml} components={{code: CodeBlock,}} />
+                    <ReactMarkdown children={parsedAnswer.answerHtml} components={{code: CodeBlock,}}
+                    rehypePlugins={[rehypeRaw]}
+                    remarkPlugins={[remarkGfm]}
+                    remarkRehypeOptions={{ passThrough: ['link'] }}/>
                 </div>
             </Stack.Item>
         </Stack>

@@ -1,11 +1,12 @@
 export type DecodedToken = {
-    iss: string;
-    aud: string;
-    exp: number;
-    iat: number;
-    sub: string;
-    name: string;
-    email: string;
+    iss: string;  // 発行者
+    aud: string;  // 受信者
+    exp: number;  // 有効期限
+    iat: number;  // 発行時間
+    sub: string;  // ユーザーID
+    name: string;  // ユーザー名
+    email: string;  // ユーザーのメールアドレス
+    roles: string;  // ユーザーの役割情報
 };
 
 export const enum Approaches {

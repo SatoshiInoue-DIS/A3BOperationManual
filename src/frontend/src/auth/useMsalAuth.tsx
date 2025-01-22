@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { getLoginInfo } from "../api";
 
 export const useMsalAuth = async () => {
-    const [loginUser, setLoginUser] = useState<string | null>(null);
+    const [loginUser, setLoginUser] = useState<{name: string, roles: string}>({name: "anonymous", roles: "none"});
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -12,7 +12,10 @@ export const useMsalAuth = async () => {
         //     try {
         //         await msalInstance.initialize();
         //     } catch (error) {
-        //         setLoginUser("anonymous");
+        //         setLoginUser({
+        //             name: "anonymous", 
+        //             roles: "none",
+        //         });
         //     }
         // };
         // const handleLogin = async () => {
@@ -25,8 +28,13 @@ export const useMsalAuth = async () => {
         //         if (loginResponse) {
         //             // 2. アクセストークンを使用して、ユーザー情報を取得するなどの処理を行う
         //             const accessToken = loginResponse.accessToken;
+        //             // トークンからログイン情報を取得
         //             const response = await getLoginInfo(accessToken)
-        //             setLoginUser(response.name || "anonymous");
+        //             setLoginUser({
+        //                 name: response.name || "anonymous",
+        //                 roles: response.roles || "none",
+        //             });
+
         //             // トークン処理後にクエリパラメータを削除する
         //             navigate("/", { replace: true });
         //         } else {
@@ -34,13 +42,19 @@ export const useMsalAuth = async () => {
         //             await msalInstance.loginRedirect(loginRequest);
         //         }
         //     } catch (error) {
-        //         setLoginUser("anonymous");
+        //         setLoginUser({
+        //             name: "anonymous",
+        //             roles: "none",
+        //         });
         //     }
         // };
 
         // handleLogin();
-        // 上のコメントアウトを復活させて下のsetLoginUser("anonymous");を消す
-        setLoginUser("anonymous");
+        // 上のコメントアウトを復活させて下のsetLoginUser("");を消す
+        setLoginUser({
+            name: "anonymous",
+            roles: "Lecturer",
+        });
     }, []);
 
     return loginUser;
