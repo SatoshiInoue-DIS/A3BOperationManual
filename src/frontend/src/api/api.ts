@@ -79,12 +79,17 @@ export async function searchdocApi(options: ChatRequest, onStreamUpdate: (conten
             if (chunk.includes("\n[END OF RESPONSE]")) {
                 // ストリームの終了を検知したら特別な処理を行う
                 onStreamUpdate("\n[END OF RESPONSE]");
+                tmp = "";
                 break;
             }
             // 受信したデータをhandleStreamUpdateに渡す
             // 通常の応答は逐次表示
             onStreamUpdate(chunk);
-            result += chunk;
+            // chunkをそのまま表示せずに一旦tmpに退避
+            // docsearchだと、[END OF RESPONSE]の前に検索情報？（ {"data_points": ["01_SQL\u57f...）のチャンクが送られる
+            // このチャンクも表示する関係で表示が崩れていたので検索情報のチャンクは表示させないように一旦tmpに退避させている
+            result += tmp;
+            tmp = chunk;
         }
         if (result.includes("\n[InvalidRequestError]")) {
             const textOfInvalidRequestError = "トークンが最大に達しました。新しいチャットを作成するか、モデルを変更してください。"
