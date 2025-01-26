@@ -1,5 +1,6 @@
 import { DecodedToken, AskRequest, AskResponse, GptChatRequest, ChatRequest, ChatResponse, UserConversations, ConversationContent, DeleteResponse } from "./models";
 
+let tmp = "";
 export async function askApi(options: AskRequest): Promise<AskResponse> {
     const response = await fetch("/ask", {
         method: "POST",
