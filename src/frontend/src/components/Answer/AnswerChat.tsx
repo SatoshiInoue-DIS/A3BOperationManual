@@ -24,10 +24,12 @@ export const AnswerChat = ({ answer, isSelected }: Props) => {
         <Stack className={`${styles.answerContainer} ${isSelected && styles.selected}`} verticalAlign="space-between">
             <Stack.Item grow>
                 <div className={styles.answerText}>
-                    <ReactMarkdown children={parsedAnswer.answerHtml} components={{code: CodeBlock,}}
-                    rehypePlugins={[rehypeRaw]}
-                    remarkPlugins={[remarkGfm]}
-                    remarkRehypeOptions={{ passThrough: ['link'] }}/>
+                    <ReactMarkdown 
+                        children={ parsedAnswer.answerHtml }
+                        components={{ code: CodeBlock }}
+                        rehypePlugins={[rehypeRaw]}
+                        remarkPlugins={[remarkGfm]}
+                        remarkRehypeOptions={{ passThrough: ['link'] }}/>
                 </div>
             </Stack.Item>
         </Stack>
