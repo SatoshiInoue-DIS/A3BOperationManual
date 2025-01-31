@@ -151,43 +151,29 @@ source quesion: {user_question}
                 messages=messages,
                 temperature=temaperature, 
                 max_tokens=1024,
-                n=1,
-                stream=True
+                n=1
             )
-            # 返答を受け取り、逐次yield
-            response_text = ""
-            for chunk in response:
-                if chunk:
-                    content = chunk['choices'][0]['delta'].get('content')
-                    if content:
-                        response_text += content
-                        yield content # 各チャンクをフロントに送信
-
-            # トークン数を推定（レスポンスの文字数から算出しているだけあまり意味はない）
-            # 新しいバージョンのopenaiならストリームでも最後にトークン数を出してくれるみたい
-            encoding_name = tiktoken.encoding_for_model(chat_model).name
-            encoding = tiktoken.get_encoding(encoding_name)
-            total_tokens = len(encoding.encode(response_text))
+            response_text = response.choices[0]["message"]["content"]
+            total_tokens += response.usage.total_tokens
             # logging
             # Azure Cosmos DBのコンテナーにプロンプトを登録
             input_text = history[-1]["user"]
             write_chatlog(ApproachType.DocSearch, user_name, total_tokens, input_text, response_text, conversationId, timestamp, title, query_text)
             msg_to_display = '\n\n'.join([str(message) for message in messages])
-            # マークダウン形式の水平線を入れ込む
-            response_text += "***"
-            yield json.dumps({
-                "data_points": results,  # 検索結果など
-                "answer": response_text,  # 最終的な応答
-                "thoughts": f"Searched for:<br>{query_text}<br><br>Conversations:<br>" + msg_to_display.replace('\n', '<br>')
-            })
 
-            yield "\n[END OF RESPONSE]"
+            return {
+                "data_points": results,
+                "answer": response_text,
+                "thoughts": f"Searched for:<br>{query_text}<br><br>Conversations:<br>" + msg_to_display.replace('\n', '<br>')
+            }
         except openai.error.InvalidRequestError as e:
             # 特定のエラーをキャッチ
-            write_error("docsearch", user_name, f"InvalidRequestError: {e}")
-            yield "\n[InvalidRequestError]"
+            write_error("chat", user_name, f"InvalidRequestError: {e}")
+            return { "answer": "InvalidRequestError:", "error": e }
         except Exception as e:
             # その他のエラーもキャッチ
-            write_error("docsearch", user_name, str(e))
-            yield "\n[ERROR]"
+            write_error("chat", user_name, str(e))
+            return { "answer": "エラーが起きました。", "error": e }
+        
+
 

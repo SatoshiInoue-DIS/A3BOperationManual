@@ -5,7 +5,7 @@ import urllib.parse
 import jwt
 import jwt.algorithms
 import requests 
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify
 
 import tiktoken
 import openai
@@ -188,8 +188,8 @@ def chat():
         impl = chat_approaches.get(approach)
         if not impl:
             return jsonify({"error": "unknown approach"}), 400
-        r = Response(impl.run(user_name, request.json["history"], overrides, conversationId, timestamp, conversation_title), content_type='text/event-stream')
-        return r
+        r = impl.run(user_name, request.json["history"], overrides, conversationId, timestamp, conversation_title)
+        return jsonify(r)
     except Exception as e:
         write_error("chat", user_name, str(e))
         return jsonify({"error": str(e)}), 500
@@ -209,8 +209,8 @@ def docsearch():
         impl = chat_approaches.get(approach)
         if not impl:
             return jsonify({"error": "unknown approach"}), 400
-        r = Response(impl.run(user_name, request.json["history"], overrides, conversationId, timestamp, conversation_title), content_type='text/event-stream')
-        return r
+        r = impl.run(user_name, request.json["history"], overrides, conversationId, timestamp, conversation_title)
+        return jsonify(r)
     except Exception as e:
         write_error("docsearch", user_name, str(e))
         return jsonify({"error": str(e)}), 500

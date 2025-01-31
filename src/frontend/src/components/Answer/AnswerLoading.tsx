@@ -3,11 +3,7 @@ import { animated, useSpring } from "@react-spring/web";
 
 import styles from "./Answer.module.css";
 
-interface Props {
-    streamResponse: string;
-}
-
-export const AnswerLoading = ({streamResponse}: Props) => {
+export const AnswerLoading = () => {
     const animatedStyles = useSpring({
         from: { opacity: 0 },
         to: { opacity: 1 }
@@ -18,7 +14,7 @@ export const AnswerLoading = ({streamResponse}: Props) => {
             <Stack className={styles.answerContainer} verticalAlign="space-between">
                 <Stack.Item grow>
                     <p className={styles.answerText}>
-                        {streamResponse}
+                        一生懸命考え中
                         <span className={styles.loadingdots} />
                     </p>
                 </Stack.Item>

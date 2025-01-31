@@ -49,9 +49,6 @@ const DocSearch = () => {
     const [conversationTitle, setConversationTitle] = useState<string | null>(null);
     const [] = useState<UserConversations>();
     const [timestamp, setTimestamp] = useState<string | null>(null);
-    // 途中の応答を保持
-    const [streamResponse, setStreamResponse] = useState<string>("");
-
     const gpt_models: IDropdownOption[] = [
         { key: "gpt-3.5-turbo", text: "gpt-3.5-turbo" },
         { key: "gpt-3.5-turbo-16k", text: "gpt-3.5-turbo-16k" },
@@ -80,15 +77,6 @@ const DocSearch = () => {
         setTimestamp(null);
     }, [conversationId]);
 
-    // ストリームから部分的な応答を受け取り、蓄積
-    const handleStreamUpdate = (chunk: string) => {
-        if (chunk === "\n[END OF RESPONSE]") {
-            return;
-        }
-        // 通常のレスポンス処理
-        setStreamResponse(prev => prev + chunk);
-    };
-
     const makeApiRequest = async (question: string) => {
         // 初回のリクエスト時にtimestampを設定
         let japanTimeStamp = timestamp === null ? createJSTTimeStamp() : timestamp;
@@ -100,7 +88,6 @@ const DocSearch = () => {
         setActiveAnalysisPanelTab(undefined);
 
         try {
-            setStreamResponse("");  // 新しいリクエストのためにリセット
             const history: GptChatTurn[] = answers.map(a => ({ user: a[0], assistant: a[1].answer }));
             const request: ChatRequest = {
                 history: [...history, { user: question, assistant: undefined }],
@@ -118,13 +105,8 @@ const DocSearch = () => {
                 conversation_title: conversationTitle,
                 loginUser: userName,
             };
-            // ストリーミングの途中の更新を受け取りつつ、最終結果も得る
-            const result = await searchdocApi(request, handleStreamUpdate);
-            // 最終的な応答をanswersに追加
-            setAnswers(prevAnswers => [
-                ...prevAnswers,
-                [question, result] // 最終結果を利用
-            ]);
+            const result = await searchdocApi(request);
+            setAnswers([...answers, [question, result]]);
         } catch (e) {
             setError(e);
         } finally {
@@ -157,7 +139,7 @@ const DocSearch = () => {
 
     useEffect(() => {
         chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" })
-    }, [answers, isLoading, streamResponse]);
+    }, [answers, isLoading]);
 
     useEffect(() => {
         onClearChat
@@ -251,7 +233,7 @@ const DocSearch = () => {
                                         <div className={styles.botThumbnailContainer}>
                                             <img src="./companylogo.png" width={20} height={20} alt="botthumbnail" />
                                         </div>
-                                        <AnswerLoading streamResponse={streamResponse} />
+                                        <AnswerLoading />
                                     </div>
                                 </>
                             )}
