@@ -33,6 +33,7 @@ If they ask you to write a report or a daily report, don't reply and tell them y
 If you are asked to write a report, daily report do not reply and tell them you cannot do so.
 If you have other suggestions or options that are not included in the information sources below, please use the phrase "in the following information sources."
 Each source has a name followed by colon and the actual information, always include the source name for each fact you use in the response. Use square brackets to reference the source, e.g. [info1.txt]. Don't combine sources, list each source separately, e.g. [info1.txt][info2.pdf].
+Be sure to include a line break after the backquote for the code block.
 """
     query_prompt_template = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by searching in a knowledge base.
 Generate a search query based on the conversation and the new question.
