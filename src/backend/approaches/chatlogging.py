@@ -22,9 +22,10 @@ endpoint = os.environ.get("AZURE_COSMOSDB_ENDPOINT")
 key = os.environ.get("COSMOSDB_KEY")
 database_name = os.environ.get("AZURE_COSMOSDB_DATABASE")
 container_name = os.environ.get("AZURE_COSMOSDB_CONTAINER")
+account_key = os.environ.get("AZURE_COSMOS_ACCOUNT_KEY")
 # CosmosDB Initialization
 credential = DefaultAzureCredential()
-database = CosmosClient(endpoint, credential).get_database_client(database_name)
+database = CosmosClient(endpoint, account_key).get_database_client(database_name)
 container = database.get_container_client(container_name)
 
 A3B_FAQ_BOT_NAME = os.environ.get("A3B_FAQ_BOT_NAME")
