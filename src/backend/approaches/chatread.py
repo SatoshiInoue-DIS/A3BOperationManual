@@ -8,7 +8,7 @@ from approaches.approach import Approach
 from approaches.chatlogging import write_chatlog, write_error, ApproachType
 from core.messagebuilder import MessageBuilder
 from core.modelhelper import get_gpt_model, get_max_token_from_messages
-
+import tiktoken
 # OpenAI APIを直接使用するシンプルな読み取り実装。OpenAIを使用して補完を生成します
 # (answer) with that prompt.
 class ChatReadApproach(Approach):
@@ -40,20 +40,33 @@ class ChatReadApproach(Approach):
                 messages=messages,
                 temperature=temaperature, 
                 max_tokens=max_tokens,
-                n=1
+                n=1,
+                stream=True
             )
-            response_text = chat_completion.choices[0]["message"]["content"]
-            total_tokens = chat_completion.usage.total_tokens
+            # 返答を受け取り、逐次yield
+            response_text = ""
+            for chunk in chat_completion:
+                if chunk:
+                    content = chunk['choices'][0]['delta'].get('content')
+                    if content:
+                        response_text += content
+                        yield content
+
+            # トークン数を推定（レスポンスの文字数から算出しているだけあまり意味はない）
+            # 新しいバージョンのopenaiならストリームでも最後にトークン数を出してくれるみたい
+            encoding_name = tiktoken.encoding_for_model(chat_model).name
+            encoding = tiktoken.get_encoding(encoding_name)
+            total_tokens = len(encoding.encode(response_text))
             # logging
             input_text = history[-1]["user"]
             write_chatlog(ApproachType.Chat, user_name, total_tokens, input_text, response_text, conversationId, timestamp, title)
 
-            return { "answer": response_text }
+            yield "\n[END OF RESPONSE]"
         except openai.error.InvalidRequestError as e:
             # 特定のエラーをキャッチ
             write_error("chat", user_name, f"InvalidRequestError: {e}")
-            return { "answer": "InvalidRequestError:", "error": e }
+            yield "\n[InvalidRequestError]"
         except Exception as e:
             # その他のエラーもキャッチ
             write_error("chat", user_name, str(e))
-            return { "answer": "エラーが起きました。", "error": e }
+            yield "\n[ERROR]"

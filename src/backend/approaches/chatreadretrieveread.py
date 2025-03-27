@@ -33,7 +33,6 @@ If they ask you to write a report or a daily report, don't reply and tell them y
 If you are asked to write a report, daily report do not reply and tell them you cannot do so.
 If you have other suggestions or options that are not included in the information sources below, please use the phrase "in the following information sources."
 Each source has a name followed by colon and the actual information, always include the source name for each fact you use in the response. Use square brackets to reference the source, e.g. [info1.txt]. Don't combine sources, list each source separately, e.g. [info1.txt][info2.pdf].
-Be sure to include a line break after the backquote for the code block.
 """
     query_prompt_template = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by searching in a knowledge base.
 Generate a search query based on the conversation and the new question.
@@ -151,29 +150,43 @@ source quesion: {user_question}
                 messages=messages,
                 temperature=temaperature, 
                 max_tokens=1024,
-                n=1
+                n=1,
+                stream=True
             )
-            response_text = response.choices[0]["message"]["content"]
-            total_tokens += response.usage.total_tokens
+            # 返答を受け取り、逐次yield
+            response_text = ""
+            for chunk in response:
+                if chunk:
+                    content = chunk['choices'][0]['delta'].get('content')
+                    if content:
+                        response_text += content
+                        yield content # 各チャンクをフロントに送信
+
+            # トークン数を推定（レスポンスの文字数から算出しているだけあまり意味はない）
+            # 新しいバージョンのopenaiならストリームでも最後にトークン数を出してくれるみたい
+            encoding_name = tiktoken.encoding_for_model(chat_model).name
+            encoding = tiktoken.get_encoding(encoding_name)
+            total_tokens = len(encoding.encode(response_text))
             # logging
             # Azure Cosmos DBのコンテナーにプロンプトを登録
             input_text = history[-1]["user"]
             write_chatlog(ApproachType.DocSearch, user_name, total_tokens, input_text, response_text, conversationId, timestamp, title, query_text)
             msg_to_display = '\n\n'.join([str(message) for message in messages])
-
-            return {
-                "data_points": results,
-                "answer": response_text,
+            # マークダウン形式の水平線を入れ込む
+            response_text += "***"
+            yield json.dumps({
+                "data_points": results,  # 検索結果など
+                "answer": response_text,  # 最終的な応答
                 "thoughts": f"Searched for:<br>{query_text}<br><br>Conversations:<br>" + msg_to_display.replace('\n', '<br>')
-            }
+            })
+
+            yield "\n[END OF RESPONSE]"
         except openai.error.InvalidRequestError as e:
             # 特定のエラーをキャッチ
-            write_error("chat", user_name, f"InvalidRequestError: {e}")
-            return { "answer": "InvalidRequestError:", "error": e }
+            write_error("docsearch", user_name, f"InvalidRequestError: {e}")
+            yield "\n[InvalidRequestError]"
         except Exception as e:
             # その他のエラーもキャッチ
-            write_error("chat", user_name, str(e))
-            return { "answer": "エラーが起きました。", "error": e }
-        
-
+            write_error("docsearch", user_name, str(e))
+            yield "\n[ERROR]"
 
