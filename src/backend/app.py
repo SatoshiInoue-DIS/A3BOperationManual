@@ -5,7 +5,7 @@ import urllib.parse
 import jwt
 import jwt.algorithms
 import requests 
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, session, redirect
 
 import tiktoken
 import openai
@@ -135,6 +135,16 @@ def userinfo():
         if user_info:  
             return jsonify(user_info)  
     return jsonify({"error": "Invalid token"}), 401
+
+@app.route("/logout", methods=["GET"])
+def logout():
+    # セッションをクリア
+    session.clear()
+    
+    # # Azure ADのサインアウトURLへリダイレクト
+    # return redirect("https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=http://localhost:1234")
+
+
 
 # 例を自己完結型に保つために、アプリ内から BLOB ストレージからコンテンツ ファイルを提供します。
 # *** 注意 *** これは、コンテンツ ファイルが公開されているか、少なくともアプリのすべてのユーザーが

@@ -1,0 +1,30 @@
+.notice_container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.nopermission_notice {
+    text-align: center;
+}
+
+.back_btn {
+    padding: 10px;
+    text-align: center;
+}
+
+/* サインアウトコンポーネントに効かしている */
+.back_btn > div {
+    padding: 12px 12px 12px 12px;
+    border-radius: 15px;
+    display: inline-block;
+    color: #fff;
+    background-color: #75777a;
+    box-shadow: 2px 2px 0px #4f5051;
+}
+
+.back_btn > div:hover {
+    box-shadow: unset;
+    transform: translate(2px,2px);
+}
