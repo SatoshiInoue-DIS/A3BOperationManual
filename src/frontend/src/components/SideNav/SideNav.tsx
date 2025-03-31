@@ -416,10 +416,10 @@ export const SideNav = ({ conversationId, onClick, clearChat,
                                             <Text>{"削除"}</Text>
                                         </div>
                                     </li>
-                                    <li>名前を変更する</li>
+                                    {/* <li>名前を変更する</li>
                                     <li>共有する</li>
                                     <li>なんかができたら</li>
-                                    <li>いいですね</li>
+                                    <li>いいですね</li> */}
                                 </ol>
                             </div>
                         )}

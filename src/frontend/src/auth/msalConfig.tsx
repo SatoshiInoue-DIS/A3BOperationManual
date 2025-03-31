@@ -12,7 +12,7 @@ const msalConfig: Configuration = {
         storeAuthStateInCookie: false, // IE11 または Edge で問題が発生する場合はこれを「true」に設定
     },
     system: {
-        allowNativeBroker: false, // WAM ブローカーを無効
+        allowPlatformBroker: false, // WAM ブローカーを無効
         // loggerOptions: {
         //     loggerCallback: (level, message, containsPii) => {
         //         if (containsPii) {

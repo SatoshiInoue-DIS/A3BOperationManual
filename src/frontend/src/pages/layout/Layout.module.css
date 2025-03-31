@@ -41,10 +41,55 @@
     text-align: left;
 }
 
+.headerTitleRightContainer {
+    cursor: pointer;
+}
+
 .headerTitleRight {
     margin-left: 12px;
     font-weight: 600;
     text-align: right;
+    position: relative;
+}
+
+.accountMenu {
+    position: absolute;
+    top: 33px;
+    right: 35px;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    min-width: 180px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+}
+
+.signOutContainer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 10px;
+    font-size: 30px;
+    color: #000000;
+}
+
+.signOutContainer:hover {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    background-color: #e4e3df;
+    border-radius: 5px;
+}
+
+/* サインアウトコンポーネントに効かしている */
+.signOutContainer > div {
+    padding: 12px 24px 12px 44px;
+    margin: -12px -24px -12px -44px;
+    display: initial;
 }
 
 .headerNavList {
