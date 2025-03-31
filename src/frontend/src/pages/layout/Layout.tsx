@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { Outlet, NavLink, Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useMsalAuth } from "../../auth/useMsalAuth";
+import { useMsal } from "@azure/msal-react";
 import { SideNav } from "../../components/SideNav";
 import styles from "./Layout.module.css";
 import { getConversationContentApi } from "../../api";
 import { ChatResponse, UserConversations, AskResponse } from '../../api/models';
 import { v4 as uuidv4 } from 'uuid';
+import SignOutButton from "../../components/SignOutButton/SignOutButton"
+import { SignOutRegular } from "@fluentui/react-icons";
+import { Text } from "@fluentui/react";
 
 const Layout = (): JSX.Element => {
     const loginUserInfo: Promise<{name: string, roles: string}> = useMsalAuth();
@@ -16,7 +20,7 @@ const Layout = (): JSX.Element => {
     const [clearChatFunc, setClearChatFunc] = useState<() => void>(() => {});
     const [conversationContent, setConversationContent] = useState<[user: string, response: ChatResponse | AskResponse][]>([]);
     const [reupdateResult, setReupdateResult] = useState<UserConversations | null>(null);
-    
+    const { instance } = useMsal();
     const makeApiRequestForConversationContent = async (conversation_id: string, approach: string) => {
         try {
             const result = await getConversationContentApi(conversation_id, approach)
@@ -101,12 +105,36 @@ const Layout = (): JSX.Element => {
         setReupdateResult(result);  
     };
 
+    const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+    const accountmenuRef = useRef<HTMLDivElement>(null); // メニューの要素を参照するためのRef
+
+    const toggleAccountMenu = () => {
+        setIsAccountMenuOpen(!isAccountMenuOpen);
+    }
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            // メニューが開いていて、かつクリックした場所がメニュー外なら閉じる
+            if (isAccountMenuOpen && accountmenuRef.current && !accountmenuRef.current.contains(event.target as Node)) {
+            setIsAccountMenuOpen(false);
+            }
+        };
+
+        // クリックイベントを追加
+        document.addEventListener("click", handleClickOutside);
+
+        // クリーンアップ関数（コンポーネントがアンマウントされたらイベント削除）
+        return () => {
+            document.removeEventListener("click", handleClickOutside);
+        };
+    }, [isAccountMenuOpen]); // isAccountMenuOpenが変わるたびにuseEffectを更新
+
     return (
         <div className={styles.layout}>
             <header className={styles.header} role={"banner"}>
                 <div className={styles.headerContainer}>
                     <div className={styles.headerTitleContainer}>
-                        <h3 className={styles.headerTitleLeft}>（仮）A3B_FAQ（IT基礎 & 開発基礎）</h3>
+                        <h3 className={styles.headerTitleLeft}>A3B_FAQ（Level1）</h3>
                     </div>
                     <nav>
                         <ul className={styles.headerNavList}>
@@ -124,7 +152,18 @@ const Layout = (): JSX.Element => {
                             </li>
                         </ul>
                     </nav>
-                    <h3 className={styles.headerTitleRight}>{userName}</h3>
+                    <div className={styles.headerTitleRightContainer} onClick={toggleAccountMenu} ref={accountmenuRef}>
+                        <h3 className={styles.headerTitleRight}>{userName}
+                            {isAccountMenuOpen && (
+                                <div className={styles.accountMenu}>
+                                    <div className={styles.signOutContainer} >
+                                        <SignOutRegular />
+                                        <SignOutButton />
+                                    </div>
+                                </div>
+                            )}
+                        </h3>
+                    </div>
                 </div>
             </header>
 

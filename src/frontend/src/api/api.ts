@@ -21,20 +21,29 @@ export async function askApi(options: AskRequest): Promise<AskResponse> {
     return parsedResponse;
 }
  
-export async function getLoginInfo(accessToken: string): Promise<DecodedToken> {
+export async function getLoginInfo(accessToken: string): Promise<DecodedToken | null> {
     const response = await fetch("/userinfo", {
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },
     });
-
+    
     const userInfo: DecodedToken = await response.json();
     // rolesが存在しない場合にデフォルト値を追加（オプション）
     if (!userInfo.roles) {
-        userInfo.roles = "Students";
+        userInfo.roles = "none";
+        return null; // ユーザー情報を返さない
     }
     return userInfo;
 }
+
+export async function LogOut() {
+    const response = await fetch("/logout", {
+        method: "GET",
+        credentials: "include"
+    });
+}
+
 
 export async function searchdocApi(options: ChatRequest): Promise<AskResponse> {
     try {
