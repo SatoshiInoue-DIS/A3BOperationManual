@@ -12,6 +12,7 @@ import { SignOutRegular } from "@fluentui/react-icons";
 import { Text } from "@fluentui/react";
 
 const Layout = (): JSX.Element => {
+    const botName = import.meta.env.VITE_A3B_FAQ_BOT_NAME;
     const loginUserInfo: Promise<{name: string, roles: string}> = useMsalAuth();
     const [userName, setUserName] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string>("none");
@@ -134,7 +135,7 @@ const Layout = (): JSX.Element => {
             <header className={styles.header} role={"banner"}>
                 <div className={styles.headerContainer}>
                     <div className={styles.headerTitleContainer}>
-                        <h3 className={styles.headerTitleLeft}>A3B_FAQ（Level1）</h3>
+                        <h3 className={styles.headerTitleLeft}>{botName}</h3>
                     </div>
                     <nav>
                         <ul className={styles.headerNavList}>
